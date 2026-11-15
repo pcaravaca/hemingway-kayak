@@ -297,7 +297,7 @@ Proyecto **personal** → sin WP. Tablero GT Kanban personal:
 |---|---|
 | ✅ Personal Done | `🛶 Hemingway Kayak · F0: Recover stash, backup, repo hygiene` — id `MUpYTWNuUXdZRVg4T09Kaw` |
 | ✅ Personal Done | `🛶 Hemingway Kayak · F1: Consolidate monorepo` — id `Q05vZ3JsVzZJOG5acnpuag` |
-| 📋 Personal Backlog | `🛶 · F2: Backend — connection, columns, JWT` — `SkdUeHlXdmdZSnlUX0x5aQ` |
+| ✅ Personal Done | `🛶 Hemingway Kayak · F2: Backend — connection, columns, JWT` — `dzlrengteXBnT1E2ZkxwTQ` |
 | 📋 Personal Backlog | `🛶 · F3: Frontend — auth guards, missing views, WS` — `eUx2c29hNVN5MVpvN0sycw` |
 | 📋 Personal Backlog | `🛶 · F4: Android buildable + wired UI` — `Z2gwZDlvOHRjUFN5VEVmVg` |
 
@@ -343,3 +343,43 @@ Honcho: conclusión guardada (estado del proyecto + decisión de monorepo + regl
 - **Root `AGENTS.md` no se pudo escribir** (el guard de archivos de instrucciones de agentes lo bloqueó y la aprobación expiró). El `AGENTS.md` de cada subproyecto sí está versionado.
 - **Push del monorepo:** sin repo GitHub todavía; requiere aprobación.
 - **Stash:** aplicado al árbol real, pero el stash sigue existiendo en el `.git` preservado (no se hizo `stash drop`).
+
+---
+
+## 13. Ejecución F2 (2026-11-15) — hecho y verificado
+
+Commit local `68bd291` (no pusheado). **17 tests PASS**, `go build ./...` y `go vet ./...` limpios.
+
+**Config y secretos**
+- `pkg/config`: todo por variables de entorno, con `.env` cargado sin dependencias (el entorno real gana sobre el archivo) y `Validate()` que falla rápido si faltan `DB_PASSWORD`/`JWT_SECRET`.
+- `hemingway-kayak-web/.env` (gitignored, chmod 600) + `.env.example`.
+- Verificado en ejecución: con `.env` el servidor pasa la config y falla sólo en la DB; sin `.env` se detiene con el error de configuración.
+
+**Autenticación y autorización**
+- `pkg/auth`: `Generate`/`Parse` (HS256) + lista de revocación.
+- `internal/middleware`: `JWTAuth`, `RequireOwnership` (ruta), `RequireResourceOwnership` (dueño en BD).
+- `internal/api`: todo protegido salvo `health`, `register`, `login` y las lecturas de torneos/trips/spots; añadidos `GET /users/me` y `GET /users/me/stats`; `logout` revoca el token.
+- El backend ya no devuelve al usuario en `login` → ahora sí (`user`), que es lo que espera `web/src/stores/auth.js`.
+
+**Base de datos**
+- DDL movida a `migrations/001_init.sql`, embebida con `go:embed` y aplicada una sola vez vía `schema_migrations`; **falla en la primera migración con error** (antes tragaba los errores).
+- Seed con hash bcrypt real generado en runtime + `tracking_sessions`; antes el hash era un valor de ejemplo.
+
+**Columnas y queries (lo que rompía el runtime)**
+- `kayaks.type` → `kaytype`; `trips.type` → `triptype`; `tournaments.type` → `tournamenttype`; `history_entries.type` → `historytype`.
+- `SCOPE_IDENTITY()` → `OUTPUT CAST(INSERTED.id AS VARCHAR(36))` (los PK son `UNIQUEIDENTIFIER`, así que `SCOPE_IDENTITY()` devolvía NULL).
+- Conteos de columnas corregidos en `GetTripHistory` (10) y `GetTournamentHistory` (9); `GetUserHistory` ahora pasa los parámetros condicionales.
+- `GetTrips` y `GetTournaments` construían `@status`/`@type` pero **no pasaban los argumentos** → corregido.
+- Stubs implementados: `GetParticipants`, `GetRanking`, `GetCatches` (devolvían `[]` vacío).
+- `nil-check` de Redis antes de publicar.
+
+**WebSocket**
+- Se eliminó la carrera `delete` bajo `RLock`; el hub ahora maneja salas (`subscribe`/`unsubscribe` con `room`) en lugar de no-ops.
+
+**Infra**
+- `Dockerfile` multi-stage (golang:1.25 → distroless) + `.dockerignore`.
+- `main.go`: validación de config y **graceful shutdown** (antes ignoraba el error de `Listen`).
+
+**Bloqueante (no verificable aquí):** `10.10.1.21:1433` no es alcanzable desde WSL (`connect: no route to host`). El backend compila y arranca, pero **no se pudo probar contra la base real**. Tampoco hay Redis local (el código lo tolera con nil).
+
+**Nota para F3:** `web/src/stores/auth.js` aún espera `token` en `register` (el backend no lo emite), mapea errores con `data.message` (el backend usa `error`) y su `logout()` local no llama al backend.
