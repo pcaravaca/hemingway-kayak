@@ -169,25 +169,31 @@ Un `.sln` de Visual Studio **no puede construir** Gradle/Android, Go ni Node/Vue
 
 ### 5.3 Estructura propuesta (Opción A)
 
+Construida el 2026-11-15 (con los nombres de carpeta originales, para no romper referencias):
+
 ```
-hemmingway-kayak/            # monorepo (recomiendo corregir la grafía; ver decisiones)
-├── android/                 # app Kotlin/Gradle  (el repo actual, movido)
-├── web/                     # backend Go + frontend Vue
-│   ├── backend/             # cmd/, internal/, pkg/, go.mod
-│   └── frontend/            # lo que hoy es web/web/
-├── docs/                    # manuales + análisis + plan
-├── scripts/                 # build/deploy/seed
+HemingwayKayak/              # raiz de la solucion (monorepo, un solo git)
+├── hemingway-kayak/         # app Kotlin/Gradle (el repo Android, movido)
+│   ├── app/                 # modulo Android (compileSdk 36, minSdk 24)
+│   ├── gradle/wrapper/      # wrapper 8.2 (el jar SI se versiona)
+│   └── docs/                # manuales tecnico y de usuario
+├── hemingway-kayak-web/     # backend Go + frontend Vue
+│   ├── cmd/server/          # entrypoint Fiber
+│   ├── internal/            # api, models, services, ws
+│   ├── pkg/                 # database (MS SQL), auth (JWT)
+│   ├── migrations/          # DDL
+│   └── web/                 # Vue 3 + Vite + Tailwind
+├── docs/                    # analisis + plan + decisiones
 ├── .gitignore               # binario, node_modules, build, .gradle, local.properties, .env
-├── README.md                # visión general + cómo levantar cada parte
-├── AGENTS.md                # lineamientos por capa
-└── hemmingway-kayak.sln     # opcional: solo agrupa rutas para el IDE, no construye
+├── README.md                # vision general + como levantar cada parte
+└── HemingwayKayak.sln       # agrupador de carpetas (no construye)
 ```
 
-Migración de git (preserve historial):
-1. En el repo Android actual: `git remote rename origin github` (o dejarlo).
-2. Crear repo nuevo `pcaravaca/hemingway-kayak` (o reusar el existente renombrado).
-3. `git subtree add` / `git filter-repo` para mover Android a `android/` conservando historial, y añadir `web/` como contenido nuevo.
-4. Decidir si `hemingway-kayak-web` desaparece como carpeta o queda de histórico.
+Migración de git (lo que se hizo de verdad, 2026-11-15):
+1. El `.git` original del repo Android se sacó de la carpeta y se preservó en `~/backups/hk-android-dotgit-20261115`; el bundle en `~/backups/hk-android-20261115.bundle`.
+2. El monorepo arrancó con **una instantánea** (`git init` + commit inicial `813c094`), sin reescribir historial.
+3. El repo Android de GitHub (`pcaravaca/hemingway-kayak`) queda intacto como archivo histórico.
+4. Pendiente de decisión: crear el repo GitHub del monorepo y hacer push (requiere aprobación).
 
 **Limpieza obligatoria antes del primer commit:** fuera `hemingway-server` (14 MB), `node_modules/`, `dist/` (se regenera), `.gradle/`, `local.properties`, y el `.git` viejo de 84 MB si se reescribe historial.
 
@@ -289,11 +295,11 @@ Proyecto **personal** → sin WP. Tablero GT Kanban personal:
 
 | Lista | Card |
 |---|---|
-| ▶️ Personal In Progress | `🛶 Hemingway Kayak · F0: Recover stash, backup, repo hygiene` — id `YWItOUpXQkpYQ1lJTGhXNQ` |
-| 📋 Personal Backlog | `🛶 · F1: Consolidate monorepo` — `THQtM3p1cVBMeE80d1BUVg` |
+| ✅ Personal Done | `🛶 Hemingway Kayak · F0: Recover stash, backup, repo hygiene` — id `MUpYTWNuUXdZRVg4T09Kaw` |
+| ✅ Personal Done | `🛶 Hemingway Kayak · F1: Consolidate monorepo` — id `Q05vZ3JsVzZJOG5acnpuag` |
 | 📋 Personal Backlog | `🛶 · F2: Backend — connection, columns, JWT` — `SkdUeHlXdmdZSnlUX0x5aQ` |
 | 📋 Personal Backlog | `🛶 · F3: Frontend — auth guards, missing views, WS` — `eUx2c29hNVN5MVpvN0sycw` |
-| 📋 Personal Backlog | `🛶 · F4: Android buildable + wired UI` — `Z2gwZDlvOHRjUFN5VEVg` |
+| 📋 Personal Backlog | `🛶 · F4: Android buildable + wired UI` — `Z2gwZDlvOHRjUFN5VEVmVg` |
 
 Honcho: conclusión guardada (estado del proyecto + decisión de monorepo + regla personal sin WP).
 
@@ -310,4 +316,30 @@ Honcho: conclusión guardada (estado del proyecto + decisión de monorepo + regl
 - No hay `local.properties` (el repo lo gitignorea); el SDK está en `/home/peter/android-sdk`.
 - Go en WSL es el de Windows (`go1.22.5 windows/amd64`) y `go.mod` pide 1.25.0.
 
-**Siguiente paso propuesto (requiere tu OK):** F1 — crear el monorepo y mover `android/` + `web/`, o arrancar F2 (backend) en el árbol actual.
+**Siguiente paso:** F2 — backend (conexión, columnas, JWT).
+
+---
+
+## 12. Ejecución F1 (2026-11-15) — hecho y verificado
+
+**Estructura construida** en `D:\Workspace\Main Repo\HemingwayKayak\`:
+
+| Elemento | Detalle |
+|---|---|
+| `hemingway-kayak/` | app Android con el stash aplicado (4 fragments, 4 ViewModels, `nav_graph.xml`, 6 tests, `compileSdk 36`, `osmdroid 6.1.18`) |
+| `hemingway-kayak-web/` | backend Go + frontend Vue (31 archivos versionados) |
+| `docs/` | este análisis + plan |
+| `README.md` | estructura, requisitos y comandos por capa |
+| `.gitignore` | `node_modules`, `dist`, `build`, `.gradle`, `gradle-7.5/`, `local.properties`, `.env`, binarios |
+| `HemingwayKayak.sln` | agrupador de carpetas (no construye) |
+
+**Verificado:**
+- Commit local `813c094` — **119 archivos, 808 KB**, `git status` limpio.
+- Fuga de secretos: **no** se versionó `local.properties`, `node_modules`, `dist`, `.gradle`, `gradle-7.5/`, binario `hemingway-server` ni `.env`.
+- Backups: `~/backups/hk-android-20261115.bundle`, `~/backups/hk-web-20261115.tar.gz`, `~/backups/hk-android-dotgit-20261115`, `~/backups/hemingway-server-20261115`.
+- Se eliminó el worktree desechable `_hk_recover`.
+
+**Pendiente / bloqueado:**
+- **Root `AGENTS.md` no se pudo escribir** (el guard de archivos de instrucciones de agentes lo bloqueó y la aprobación expiró). El `AGENTS.md` de cada subproyecto sí está versionado.
+- **Push del monorepo:** sin repo GitHub todavía; requiere aprobación.
+- **Stash:** aplicado al árbol real, pero el stash sigue existiendo en el `.git` preservado (no se hizo `stash drop`).
