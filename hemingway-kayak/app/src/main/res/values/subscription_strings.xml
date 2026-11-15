@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Títulos de Suscripción / Subscription Titles -->
+    <string name="sub_free_title">Básico / Basic</string>
+    <string name="sub_angler_title">Pescador / Angler</string>
+    <string name="sub_captain_title">Capitán / Captain</string>
+    <string name="sub_master_title">Maestro / Master</string>
+
+    <!-- Precios / Prices -->
+    <string name="sub_free_price">Gratis / Free</string>
+    <string name="sub_angler_price">$4.99/mes / month</string>
+    <string name="sub_captain_price">$9.99/mes / month</string>
+    <string name="sub_master_price">$19.99/mes / month</string>
+
+    <!-- Características / Features -->
+    <string name="feature_contacts">Contactos de emergencia / Emergency contacts</string>
+    <string name="feature_emergency">Servicios de emergencia / Emergency services</string>
+    <string name="feature_weather">Alertas de clima / Weather alerts</string>
+    <string name="feature_offline">Modo sin conexión / Offline mode</string>
+    <string name="feature_messages">Mensajes personalizados / Custom messages</string>
+    <string name="feature_support">Soporte prioritario / Priority support</string>
+    <string name="feature_ads">Sin anuncios / No ads</string>
+    <string name="feature_export">Exportación de datos / Data export</string>
+    <string name="feature_updates">Actualizaciones rápidas / Fast updates</string>
+
+    <!-- Características de Pesca / Fishing Features -->
+    <string name="feature_spots">Puntos de pesca / Fishing spots</string>
+    <string name="feature_tides">Información de mareas / Tide information</string>
+    <string name="feature_log">Registro de pesca / Fishing log</string>
+    <string name="feature_sonar">Soporte para sonar / Sonar support</string>
+    <string name="feature_forecast">Pronóstico extendido / Extended forecast</string>
+
+    <!-- Botones / Buttons -->
+    <string name="btn_subscribe">Suscribirse / Subscribe</string>
+    <string name="btn_current_plan">Plan Actual / Current Plan</string>
+    <string name="btn_upgrade">Mejorar Plan / Upgrade Plan</string>
+    <string name="btn_manage">Gestionar Suscripción / Manage Subscription</string>
+
+    <!-- Mensajes / Messages -->
+    <string name="msg_subscription_success">¡Suscripción exitosa! / Subscription successful!</string>
+    <string name="msg_subscription_error">Error en la suscripción / Subscription error</string>
+    <string name="msg_restore_success">Suscripción restaurada / Subscription restored</string>
+    <string name="msg_trial_available">¡Prueba gratuita disponible! / Free trial available!</string>
+</resources>

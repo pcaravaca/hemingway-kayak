@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hemingway Kayak</string>
+    
+    <!-- Títulos de pantallas / Screen titles -->
+    <string name="home_title">Inicio</string>
+    <string name="weather_title">Clima</string>
+    <string name="fishing_title">Pesca</string>
+    <string name="map_title">Mapa</string>
+    <string name="settings_title">Ajustes</string>
+    
+    <!-- Botones comunes / Common buttons -->
+    <string name="btn_save">Guardar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_ok">Aceptar</string>
+    <string name="btn_continue">Continuar</string>
+    <string name="btn_back">Atrás</string>
+    
+    <!-- Etiquetas de clima / Weather labels -->
+    <string name="weather_current">Clima actual</string>
+    <string name="weather_temperature">Temperatura</string>
+    <string name="weather_feels_like">Sensación térmica</string>
+    <string name="weather_pressure">Presión</string>
+    <string name="weather_humidity">Humedad</string>
+    <string name="weather_wind">Viento</string>
+    <string name="weather_clouds">Nubes</string>
+    <string name="weather_precipitation">Precipitación</string>
+    <string name="weather_update">Actualizado</string>
+    
+    <!-- Etiquetas de pesca / Fishing labels -->
+    <string name="fishing_favorability">Favorabilidad de pesca</string>
+    <string name="fishing_pressure_trend">Tendencia de presión</string>
+    <string name="fishing_moon_phase">Fase lunar</string>
+    <string name="fishing_best_time">Mejor momento para pescar</string>
+    <string name="fishing_techniques">Técnicas recomendadas</string>
+    <string name="fishing_baits">Cebos recomendados</string>
+    <string name="fishing_excellent">Excelentes condiciones</string>
+    <string name="fishing_good">Buenas condiciones</string>
+    <string name="fishing_moderate">Condiciones moderadas</string>
+    <string name="fishing_poor">Condiciones pobres</string>
+    <string name="fishing_very_poor">Condiciones muy malas</string>
+    <string name="pressure_rising">Subiendo</string>
+    <string name="pressure_falling">Bajando</string>
+    <string name="pressure_stable">Estable</string>
+    <string name="moon_new">Luna nueva</string>
+    <string name="moon_waxing_crescent">Luna creciente</string>
+    <string name="moon_first_quarter">Cuarto creciente</string>
+    <string name="moon_waxing_gibbous">Gibosa creciente</string>
+    <string name="moon_full">Luna llena</string>
+    <string name="moon_waning_gibbous">Gibosa menguante</string>
+    <string name="moon_third_quarter">Cuarto menguante</string>
+    <string name="moon_waning_crescent">Luna menguante</string>
+    
+    <!-- Configuración / Settings -->
+    <string name="settings_general">General</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_units">Unidades</string>
+    <string name="settings_fishing">Pesca</string>
+    <string name="settings_species">Especies</string>
+    <string name="settings_techniques">Técnicas</string>
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_weather_alerts">Alertas de clima</string>
+    <string name="settings_fishing_recommendations">Recomendaciones de pesca</string>
+    <string name="settings_notification_frequency">Frecuencia de notificaciones</string>
+    <string name="settings_maps">Mapas</string>
+    <string name="settings_offline_maps">Mapas sin conexión</string>
+    <string name="settings_fishing_spots">Mostrar lugares de pesca</string>
+    <string name="settings_track_route">Seguir ruta</string>
+    <string name="settings_account">Cuenta</string>
+    <string name="settings_community">Comunidad</string>
+    
+    <!-- Mensajes / Messages -->
+    <string name="msg_loading">Cargando…</string>
+    <string name="msg_no_internet">Sin conexión a internet</string>
+    <string name="msg_using_cached_data">Usando datos almacenados</string>
+    <string name="msg_location_required">Se requiere ubicación</string>
+    <string name="msg_permissions_required">Se requieren permisos</string>
+    <string name="msg_update_available">Actualización disponible</string>
+    <string name="msg_saved">Guardado</string>
+    <string name="msg_error">Error</string>
+    
+    <!-- Ubicación / Location -->
+    <string name="location_permission_required">Se requiere permiso de ubicación para mostrar su posición en el mapa.</string>
+    <string name="location_permission_denied">La aplicación no puede funcionar correctamente sin acceso a su ubicación.</string>
+    
+    <!-- Mapa / Map -->
+    <string name="add_fishing_spot">Añadir punto de pesca</string>
+    <string name="edit_fishing_spot">Editar punto de pesca</string>
+    <string name="delete_fishing_spot">Eliminar punto de pesca</string>
+    <string name="fishing_spot_name">Nombre del punto</string>
+    <string name="fishing_spot_description">Descripción</string>
+    <string name="fishing_spot_rating">Valoración</string>
+    <string name="fishing_spot_fish_caught">Peces capturados: %d</string>
+    <string name="fishing_spot_shared">Compartido</string>
+    <string name="fishing_spot_not_shared">No compartido</string>
+    <string name="fishing_spot_saved">Punto de pesca guardado</string>
+    <string name="fishing_spot_deleted">Punto de pesca eliminado</string>
+    <string name="fishing_spot_share_success">Punto de pesca compartido exitosamente</string>
+    <string name="edit">Editar</string>
+    <string name="delete">Eliminar</string>
+    <string name="close">Cerrar</string>
+    <string name="confirm_delete">¿Está seguro de que desea eliminar este punto de pesca?</string>
+</resources>

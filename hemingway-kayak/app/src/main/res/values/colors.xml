@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores del logo / Logo colors -->
+    <color name="logo_neon">#4DFFA9</color>
+    <color name="logo_dark">#1A1B1E</color>
+    <color name="logo_turquoise">#40E0D0</color>
+    
+    <!-- Colores de la app / App colors -->
+    <color name="primary">@color/logo_turquoise</color>
+    <color name="primary_dark">@color/logo_dark</color>
+    <color name="primaryColor">#4DFFA9</color>
+    <color name="accent">@color/logo_neon</color>
+    
+    <!-- Colores base / Base colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

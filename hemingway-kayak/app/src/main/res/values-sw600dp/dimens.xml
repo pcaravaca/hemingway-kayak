@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet (7-8") scaling -->
+    <dimen name="spacing_xs">6dp</dimen>
+    <dimen name="spacing_sm">12dp</dimen>
+    <dimen name="spacing_md">20dp</dimen>
+    <dimen name="spacing_lg">32dp</dimen>
+    <dimen name="spacing_xl">48dp</dimen>
+    
+    <dimen name="text_size_caption">14sp</dimen>
+    <dimen name="text_size_body">16sp</dimen>
+    <dimen name="text_size_subtitle">18sp</dimen>
+    <dimen name="text_size_title">22sp</dimen>
+    <dimen name="text_size_headline">28sp</dimen>
+    <dimen name="text_size_display">34sp</dimen>
+    <dimen name="text_size_large_display">56sp</dimen>
+    <dimen name="text_size_score">84sp</dimen>
+    
+    <dimen name="button_height">56dp</dimen>
+    <dimen name="button_min_width">160dp</dimen>
+    <dimen name="fab_size">64dp</dimen>
+    <dimen name="fab_margin">24dp</dimen>
+    
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="card_elevation">6dp</dimen>
+    <dimen name="card_padding">20dp</dimen>
+    
+    <dimen name="icon_size_sm">32dp</dimen>
+    <dimen name="icon_size_md">48dp</dimen>
+    <dimen name="icon_size_lg">64dp</dimen>
+    
+    <dimen name="map_marker_size">56dp</dimen>
+</resources>

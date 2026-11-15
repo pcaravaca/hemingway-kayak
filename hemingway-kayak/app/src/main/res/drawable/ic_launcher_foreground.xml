@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Círculo radar -->
+    <path
+        android:fillColor="@color/logo_turquoise"
+        android:fillAlpha="0.3"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
+    <path
+        android:strokeColor="@color/logo_neon"
+        android:strokeWidth="2"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"/>
+    <path
+        android:strokeColor="@color/logo_neon"
+        android:strokeWidth="1"
+        android:pathData="M54,54m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0"/>
+    
+    <!-- Líneas de cruz -->
+    <path
+        android:strokeColor="@color/logo_neon"
+        android:strokeWidth="1"
+        android:pathData="M54,14L54,94"/>
+    <path
+        android:strokeColor="@color/logo_neon"
+        android:strokeWidth="1"
+        android:pathData="M14,54L94,54"/>
+    
+    <!-- Kayak estilizado -->
+    <path
+        android:fillColor="@color/logo_neon"
+        android:pathData="M44,44 L64,54 L44,64 Z"/>
+    
+    <!-- Señal WiFi/GPS -->
+    <path
+        android:strokeColor="@color/logo_neon"
+        android:strokeWidth="2"
+        android:pathData="M70,38 Q75,33 80,38"/>
+    <path
+        android:strokeColor="@color/logo_neon"
+        android:strokeWidth="2"
+        android:pathData="M72,33 Q79,26 86,33"/>
+</vector>

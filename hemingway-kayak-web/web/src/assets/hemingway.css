@@ -1,0 +1,222 @@
+/* Hemingway Design System - Shared Variables
+ * Usado por: Android App & Web App
+ * Colores del logo: #4DFFA9 (neon), #40E0D0 (turquoise), #1A1B1E (dark)
+ */
+
+:root {
+  /* Primary Colors - Logo */
+  --hemingway-neon: #4DFFA9;
+  --hemingway-turquoise: #40E0D0;
+  --hemingway-dark: #1A1B1E;
+  
+  /* Background Colors */
+  --hemingway-bg-primary: #1A1B1E;
+  --hemingway-bg-secondary: #2A2B2E;
+  --hemingway-bg-tertiary: #3A3B3E;
+  
+  /* Text Colors */
+  --hemingway-text-primary: #FFFFFF;
+  --hemingway-text-secondary: #B0B0B0;
+  --hemingway-text-muted: #707070;
+  
+  /* Accent Colors */
+  --hemingway-accent-success: #4DFFA9;
+  --hemingway-accent-warning: #FFD700;
+  --hemingway-accent-error: #FF6B6B;
+  --hemingway-accent-info: #40E0D0;
+  
+  /* Gradient */
+  --hemingway-gradient: linear-gradient(135deg, #4DFFA9 0%, #40E0D0 100%);
+  
+  /* Spacing */
+  --hemingway-space-xs: 4px;
+  --hemingway-space-sm: 8px;
+  --hemingway-space-md: 16px;
+  --hemingway-space-lg: 24px;
+  --hemingway-space-xl: 32px;
+  --hemingway-space-2xl: 48px;
+  
+  /* Border Radius */
+  --hemingway-radius-sm: 4px;
+  --hemingway-radius-md: 8px;
+  --hemingway-radius-lg: 12px;
+  --hemingway-radius-xl: 16px;
+  --hemingway-radius-full: 9999px;
+  
+  /* Shadows */
+  --hemingway-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --hemingway-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --hemingway-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --hemingway-shadow-glow: 0 0 20px rgba(77, 255, 169, 0.3);
+  
+  /* Typography */
+  --hemingway-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --hemingway-font-size-xs: 12px;
+  --hemingway-font-size-sm: 14px;
+  --hemingway-font-size-base: 16px;
+  --hemingway-font-size-lg: 18px;
+  --hemingway-font-size-xl: 20px;
+  --hemingway-font-size-2xl: 24px;
+  --hemingway-font-size-3xl: 30px;
+  --hemingway-font-size-4xl: 36px;
+  
+  /* Transitions */
+  --hemingway-transition-fast: 150ms ease;
+  --hemingway-transition-normal: 250ms ease;
+  --hemingway-transition-slow: 350ms ease;
+}
+
+/* Base Styles */
+.hemingway-body {
+  font-family: var(--hemingway-font-family);
+  background-color: var(--hemingway-bg-primary);
+  color: var(--hemingway-text-primary);
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* Typography Classes */
+.hemingway-title {
+  font-size: var(--hemingway-font-size-3xl);
+  font-weight: 700;
+  color: var(--hemingway-neon);
+  margin: 0;
+}
+
+.hemingway-subtitle {
+  font-size: var(--hemingway-font-size-lg);
+  font-weight: 600;
+  color: var(--hemingway-turquoise);
+  margin: 0;
+}
+
+.hemingway-text {
+  font-size: var(--hemingham-font-size-base);
+  color: var(--hemingway-text-primary);
+}
+
+.hemingway-text-muted {
+  font-size: var(--hemingham-font-size-sm);
+  color: var(--hemingway-text-muted);
+}
+
+/* Button Base */
+.hemingway-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hemingway-space-sm);
+  padding: var(--hemingway-space-md) var(--hemingway-space-lg);
+  font-family: var(--hemingway-font-family);
+  font-size: var(--hemingham-font-size-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--hemingway-radius-lg);
+  cursor: pointer;
+  transition: all var(--hemmingway-transition-normal);
+}
+
+.hemingway-btn-primary {
+  background: var(--hemmingway-gradient);
+  color: var(--hemingway-dark);
+}
+
+.hemingway-btn-primary:hover {
+  box-shadow: var(--hemmingway-shadow-glow);
+  transform: translateY(-2px);
+}
+
+.hemingway-btn-secondary {
+  background: transparent;
+  border: 2px solid var(--hemmingway-turquoise);
+  color: var(--hemmingway-turquoise);
+}
+
+.hemingway-btn-secondary:hover {
+  background: rgba(64, 224, 208, 0.1);
+}
+
+.hemingway-btn-ghost {
+  background: transparent;
+  color: var(--hemmingway-text-secondary);
+}
+
+.hemingway-btn-ghost:hover {
+  color: var(--hemmingway-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Card Base */
+.hemingway-card {
+  background: var(--hemmingway-bg-secondary);
+  border-radius: var(--hemmingway-radius-xl);
+  padding: var(--hemmingway-space-lg);
+  box-shadow: var(--hemmingway-shadow-md);
+}
+
+/* Input Base */
+.hemingway-input {
+  width: 100%;
+  padding: var(--hemmingway-space-md);
+  background: var(--hemmingway-bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--hemmingway-radius-md);
+  color: var(--hemmingway-text-primary);
+  font-family: var(--hemmingway-font-family);
+  font-size: var(--hemmingway-font-size-base);
+  transition: border-color var(--hemmingway-transition-fast);
+}
+
+.hemingway-input:focus {
+  outline: none;
+  border-color: var(--hemmingway-turquoise);
+}
+
+.hemingway-input::placeholder {
+  color: var(--hemmingway-text-muted);
+}
+
+/* Status Badges */
+.hemingway-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--hemmingway-space-xs) var(--hemmingway-space-md);
+  font-size: var(--hemmingway-font-size-xs);
+  font-weight: 600;
+  border-radius: var(--hemmingway-radius-full);
+  text-transform: uppercase;
+}
+
+.hemingway-badge-success {
+  background: rgba(77, 255, 169, 0.2);
+  color: var(--hemmingway-neon);
+}
+
+.hemingway-badge-warning {
+  background: rgba(255, 215, 0, 0.2);
+  color: var(--hemmingway-accent-warning);
+}
+
+.hemingway-badge-error {
+  background: rgba(255, 107, 107, 0.2);
+  color: var(--hemmingway-accent-error);
+}
+
+.hemingway-badge-info {
+  background: rgba(64, 224, 208, 0.2);
+  color: var(--hemmingway-turquoise);
+}
+
+/* Utility Classes */
+.text-neon { color: var(--hemmingway-neon); }
+.text-turquoise { color: var(--hemmingway-turquoise); }
+.text-muted { color: var(--hemmingway-text-muted); }
+
+.bg-primary { background-color: var(--hemmingway-bg-primary); }
+.bg-secondary { background-color: var(--hemmingway-bg-secondary); }
+
+.rounded-sm { border-radius: var(--hemmingway-radius-sm); }
+.rounded-md { border-radius: var(--hemmingway-radius-md); }
+.rounded-lg { border-radius: var(--hemmingway-radius-lg); }
+.rounded-xl { border-radius: var(--hemmingway-radius-xl); }

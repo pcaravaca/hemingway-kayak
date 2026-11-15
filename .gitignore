@@ -1,0 +1,52 @@
+# ---- Node / frontend ----
+node_modules/
+dist/
+web/web/dist/
+web/web/.vite/
+.eslintcache
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- Go / backend ----
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+hemingway-server
+
+# ---- Android / Gradle ----
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.keystore
+*.jks
+google-services.json
+# bundled Gradle distribution (129 MB) - the wrapper downloads the right one
+gradle-7.5/
+
+# ---- Secrets / env ----
+.env
+.env.*
+!.env.example
+
+# ---- OS / editors ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ---- Logs ----
+*.log

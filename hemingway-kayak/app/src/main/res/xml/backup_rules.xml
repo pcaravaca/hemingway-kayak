@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Se incluyen datos de preferencias / Include preferences data -->
+    <include domain="sharedpref" path="."/>
+    
+    <!-- Se excluyen datos temporales / Exclude temporary data -->
+    <exclude domain="sharedpref" path="temp_prefs.xml"/>
+</full-backup-content>

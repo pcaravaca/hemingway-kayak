@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/logo_dark"
+        android:pathData="M0,0h108v108h-108z"/>
+    <!-- Ondas estilizadas -->
+    <path
+        android:strokeColor="@color/logo_turquoise"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
+        android:pathData="M0,30 Q27,45 54,30 Q81,15 108,30"/>
+    <path
+        android:strokeColor="@color/logo_turquoise"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
+        android:pathData="M0,60 Q27,75 54,60 Q81,45 108,60"/>
+    <path
+        android:strokeColor="@color/logo_turquoise"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
+        android:pathData="M0,90 Q27,105 54,90 Q81,75 108,90"/>
+</vector>
