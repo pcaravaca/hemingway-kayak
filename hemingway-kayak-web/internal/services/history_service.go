@@ -19,18 +19,17 @@ func (s *HistoryService) GetUserHistory(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 	historyType := c.Query("type")
 
-	query := `SELECT id, user_id, type, reference_id, title, description, data, occurred_at, created_at
+	query := `SELECT id, user_id, historytype, reference_id, title, description, data, occurred_at, created_at
 	          FROM history_entries WHERE user_id = @userId`
 
+	args := []interface{}{sql.Named("userId", userID)}
 	if historyType != "" {
-		query += " AND type = @type"
+		query += " AND historytype = @type"
+		args = append(args, sql.Named("type", historyType))
 	}
 	query += " ORDER BY occurred_at DESC"
 
-	rows, err := s.db.QueryContext(context.Background(), query,
-		sql.Named("userId", userID),
-		sql.Named("type", historyType),
-	)
+	rows, err := s.db.QueryContext(context.Background(), query, args...)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
 	}
@@ -99,12 +98,12 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 
 	trips := []map[string]interface{}{}
 	for rows.Next() {
-		var id, userID, title, status sql.NullString
+		var id, userID, title, tripType, status sql.NullString
 		var startTime, endTime, createdAt sql.NullTime
 		var distance sql.NullFloat64
 		var pointCount int
 
-		if err := rows.Scan(&id, &userID, &title, &status, &startTime, &endTime, &distance, &createdAt, &pointCount); err != nil {
+		if err := rows.Scan(&id, &userID, &title, &tripType, &status, &startTime, &endTime, &distance, &createdAt, &pointCount); err != nil {
 			continue
 		}
 
@@ -114,6 +113,9 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 		}
 		if title.Valid {
 			trip["title"] = title.String
+		}
+		if tripType.Valid {
+			trip["type"] = tripType.String
 		}
 		if status.Valid {
 			trip["status"] = status.String
@@ -150,12 +152,12 @@ func (s *HistoryService) GetTournamentHistory(c *fiber.Ctx) error {
 
 	history := []map[string]interface{}{}
 	for rows.Next() {
-		var tournamentID, name, status sql.NullString
+		var tournamentID, name, tournamentType, status sql.NullString
 		var startTime, endTime, joinedAt sql.NullTime
 		var score sql.NullFloat64
 		var catchesCount sql.NullInt64
 
-		if err := rows.Scan(&tournamentID, &name, &status, &startTime, &endTime, &score, &catchesCount, &joinedAt); err != nil {
+		if err := rows.Scan(&tournamentID, &name, &tournamentType, &status, &startTime, &endTime, &score, &catchesCount, &joinedAt); err != nil {
 			continue
 		}
 
@@ -165,6 +167,9 @@ func (s *HistoryService) GetTournamentHistory(c *fiber.Ctx) error {
 		}
 		if name.Valid {
 			entry["name"] = name.String
+		}
+		if tournamentType.Valid {
+			entry["type"] = tournamentType.String
 		}
 		if status.Valid {
 			entry["status"] = status.String

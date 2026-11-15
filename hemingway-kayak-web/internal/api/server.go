@@ -1,8 +1,9 @@
 package api
 
 import (
+	"context"
+	"database/sql"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,12 +13,16 @@ import (
 	"github.com/gofiber/websocket/v2"
 	"github.com/redis/go-redis/v9"
 
+	"hemingway-kayak-web/internal/middleware"
 	"hemingway-kayak-web/internal/services"
 	"hemingway-kayak-web/internal/ws"
+	"hemingway-kayak-web/pkg/auth"
+	"hemingway-kayak-web/pkg/config"
 )
 
 type Server struct {
 	app               *fiber.App
+	db                *sql.DB
 	redis             *redis.Client
 	userService       *services.UserService
 	trackingService   *services.TrackingService
@@ -25,9 +30,12 @@ type Server struct {
 	tripService       *services.TripService
 	historyService    *services.HistoryService
 	wsHub             *ws.Hub
+	jwtSecret         []byte
+	revoked           *auth.Revocation
 }
 
 func NewServer(
+	db *sql.DB,
 	redis *redis.Client,
 	userService *services.UserService,
 	trackingService *services.TrackingService,
@@ -35,6 +43,7 @@ func NewServer(
 	tripService *services.TripService,
 	historyService *services.HistoryService,
 ) *Server {
+	cfg := config.Load()
 	app := fiber.New(fiber.Config{
 		AppName: "Hemingway Kayak API",
 	})
@@ -44,13 +53,14 @@ func NewServer(
 		Format: "[${time}] ${status} - ${method} ${path} (${latency})\n",
 	}))
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: os.Getenv("CORS_ORIGINS"),
+		AllowOrigins: cfg.CORSOrigins,
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
 	}))
 
 	return &Server{
 		app:               app,
+		db:                db,
 		redis:             redis,
 		userService:       userService,
 		trackingService:   trackingService,
@@ -58,20 +68,25 @@ func NewServer(
 		tripService:       tripService,
 		historyService:    historyService,
 		wsHub:             ws.NewHub(),
+		jwtSecret:         []byte(cfg.JWTSecret),
+		revoked:           auth.NewRevocation(),
 	}
 }
 
+// Start levanta el servidor (bloquea hasta que el listener falle).
 func (s *Server) Start() error {
 	s.setupRoutes()
 	s.setupWebsocket()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	log.Printf("Server starting on port %s", config.Load().Port)
+	return s.app.Listen(":" + config.Load().Port)
+}
 
-	log.Printf("Server starting on port %s", port)
-	return s.app.Listen(":" + port)
+// Shutdown detiene el servidor de forma grácil.
+func (s *Server) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return s.app.ShutdownWithContext(ctx)
 }
 
 func (s *Server) setupRoutes() {
@@ -84,62 +99,63 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
-	auth := api.Group("/auth")
-	auth.Post("/register", s.userService.Register)
-	auth.Post("/login", s.userService.Login)
-	auth.Post("/logout", s.userService.Logout)
+	// --- Público ---
+	api.Post("/auth/register", s.userService.Register)
+	api.Post("/auth/login", s.userService.Login)
 
-	users := api.Group("/users")
-	users.Get("/:id", s.userService.GetUser)
-	users.Put("/:id", s.userService.UpdateUser)
-	users.Get("/:id/profile", s.userService.GetProfile)
+	// Lectura pública (feed)
+	api.Get("/tournaments", s.tournamentService.GetTournaments)
+	api.Get("/tournaments/live", s.tournamentService.GetLiveTournaments)
+	api.Get("/tournaments/:id", s.tournamentService.GetTournament)
+	api.Get("/tournaments/:id/participants", s.tournamentService.GetParticipants)
+	api.Get("/tournaments/:id/ranking", s.tournamentService.GetRanking)
+	api.Get("/tournaments/:id/catches", s.tournamentService.GetCatches)
+	api.Get("/trips", s.tripService.GetTrips)
+	api.Get("/spots", s.tripService.GetSharedSpots)
 
-	kayaks := api.Group("/kayaks")
-	kayaks.Get("/", s.userService.GetKayaks)
-	kayaks.Post("/", s.userService.CreateKayak)
-	kayaks.Put("/:id", s.userService.UpdateKayak)
-	kayaks.Delete("/:id", s.userService.DeleteKayak)
+	// --- Autenticado ---
+	sec := api.Group("", middleware.JWTAuth(s.jwtSecret, s.revoked))
 
-	trips := api.Group("/trips")
-	trips.Get("/", s.tripService.GetTrips)
-	trips.Get("/:id", s.tripService.GetTrip)
-	trips.Post("/", s.tripService.CreateTrip)
-	trips.Put("/:id", s.tripService.UpdateTrip)
-	trips.Delete("/:id", s.tripService.DeleteTrip)
-	trips.Get("/:id/points", s.tripService.GetTripPoints)
-	trips.Post("/:id/points", s.tripService.AddTripPoint)
+	sec.Post("/auth/logout", s.userService.Logout)
 
-	tournaments := api.Group("/tournaments")
-	tournaments.Get("/", s.tournamentService.GetTournaments)
-	tournaments.Get("/live", s.tournamentService.GetLiveTournaments)
-	tournaments.Get("/:id", s.tournamentService.GetTournament)
-	tournaments.Post("/", s.tournamentService.CreateTournament)
-	tournaments.Put("/:id", s.tournamentService.UpdateTournament)
-	tournaments.Get("/:id/participants", s.tournamentService.GetParticipants)
-	tournaments.Get("/:id/ranking", s.tournamentService.GetRanking)
-	tournaments.Post("/:id/join", s.tournamentService.JoinTournament)
-	tournaments.Post("/:id/leave", s.tournamentService.LeaveTournament)
-	tournaments.Post("/:id/catches", s.tournamentService.RecordCatch)
-	tournaments.Get("/:id/catches", s.tournamentService.GetCatches)
+	sec.Get("/users/me", s.userService.GetMe)
+	sec.Get("/users/me/stats", s.userService.GetMyStats)
+	sec.Get("/users/:id", middleware.RequireOwnership("id"), s.userService.GetUser)
+	sec.Put("/users/:id", middleware.RequireOwnership("id"), s.userService.UpdateUser)
+	sec.Get("/users/:id/profile", middleware.RequireOwnership("id"), s.userService.GetProfile)
 
-	tracking := api.Group("/tracking")
-	tracking.Get("/session/:userId", s.trackingService.GetActiveSession)
-	tracking.Post("/start", s.trackingService.StartTracking)
-	tracking.Post("/stop", s.trackingService.StopTracking)
-	tracking.Post("/point", s.trackingService.UpdateLocation)
-	tracking.Get("/follow/:userId", s.trackingService.FollowUser)
-	tracking.Get("/followers", s.trackingService.GetFollowers)
+	sec.Get("/kayaks/", s.userService.GetKayaks)
+	sec.Post("/kayaks/", s.userService.CreateKayak)
+	sec.Put("/kayaks/:id", middleware.RequireResourceOwnership(s.db, "kayaks", "user_id", "id"), s.userService.UpdateKayak)
+	sec.Delete("/kayaks/:id", middleware.RequireResourceOwnership(s.db, "kayaks", "user_id", "id"), s.userService.DeleteKayak)
 
-	history := api.Group("/history")
-	history.Get("/user/:userId", s.historyService.GetUserHistory)
-	history.Get("/user/:userId/trips", s.historyService.GetTripHistory)
-	history.Get("/user/:userId/tournaments", s.historyService.GetTournamentHistory)
+	sec.Get("/trips/:id", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.GetTrip)
+	sec.Post("/trips/", s.tripService.CreateTrip)
+	sec.Put("/trips/:id", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.UpdateTrip)
+	sec.Delete("/trips/:id", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.DeleteTrip)
+	sec.Get("/trips/:id/points", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.GetTripPoints)
+	sec.Post("/trips/:id/points", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.AddTripPoint)
 
-	spots := api.Group("/spots")
-	spots.Get("/", s.tripService.GetSharedSpots)
-	spots.Post("/", s.tripService.CreateSpot)
-	spots.Put("/:id", s.tripService.UpdateSpot)
-	spots.Delete("/:id", s.tripService.DeleteSpot)
+	sec.Post("/tournaments/", s.tournamentService.CreateTournament)
+	sec.Put("/tournaments/:id", middleware.RequireResourceOwnership(s.db, "tournaments", "organizer_id", "id"), s.tournamentService.UpdateTournament)
+	sec.Post("/tournaments/:id/join", s.tournamentService.JoinTournament)
+	sec.Post("/tournaments/:id/leave", s.tournamentService.LeaveTournament)
+	sec.Post("/tournaments/:id/catches", s.tournamentService.RecordCatch)
+
+	sec.Get("/tracking/session/:userId", middleware.RequireOwnership("userId"), s.trackingService.GetActiveSession)
+	sec.Post("/tracking/start", s.trackingService.StartTracking)
+	sec.Post("/tracking/stop", s.trackingService.StopTracking)
+	sec.Post("/tracking/point", s.trackingService.UpdateLocation)
+	sec.Get("/tracking/follow/:userId", s.trackingService.FollowUser)
+	sec.Get("/tracking/followers", s.trackingService.GetFollowers)
+
+	sec.Get("/history/user/:userId", middleware.RequireOwnership("userId"), s.historyService.GetUserHistory)
+	sec.Get("/history/user/:userId/trips", middleware.RequireOwnership("userId"), s.historyService.GetTripHistory)
+	sec.Get("/history/user/:userId/tournaments", middleware.RequireOwnership("userId"), s.historyService.GetTournamentHistory)
+
+	sec.Post("/spots/", s.tripService.CreateSpot)
+	sec.Put("/spots/:id", middleware.RequireResourceOwnership(s.db, "fishing_spots", "user_id", "id"), s.tripService.UpdateSpot)
+	sec.Delete("/spots/:id", middleware.RequireResourceOwnership(s.db, "fishing_spots", "user_id", "id"), s.tripService.DeleteSpot)
 }
 
 func (s *Server) setupWebsocket() {

@@ -25,12 +25,14 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 	          FROM tournaments t
 	          JOIN users u ON t.organizer_id = u.id WHERE 1=1`
 
+	var args []interface{}
 	if status != "" {
 		query += " AND t.status = @status"
+		args = append(args, sql.Named("status", status))
 	}
 	query += " ORDER BY t.start_time DESC"
 
-	rows, err := s.db.QueryContext(context.Background(), query)
+	rows, err := s.db.QueryContext(context.Background(), query, args...)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
 	}
@@ -185,7 +187,7 @@ func (s *TournamentService) GetTournament(c *fiber.Ctx) error {
 
 	err := s.db.QueryRowContext(context.Background(),
 		`SELECT id, name, description, organizer_id, start_time, end_time,
-		        location_name, start_lat, start_lon, status, type, max_participants
+		        location_name, start_lat, start_lon, status, tournamenttype, max_participants
 		 FROM tournaments WHERE id = @id`,
 		sql.Named("id", id),
 	).Scan(&tournament.ID, &tournament.Name, &tournament.Description,
@@ -238,9 +240,9 @@ func (s *TournamentService) CreateTournament(c *fiber.Ctx) error {
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO tournaments (name, description, organizer_id, start_time, end_time, 
-		 location_name, start_lat, start_lon, type, max_participants, status)
-		 VALUES (@name, @desc, @orgId, @start, @end, @loc, @lat, @lon, @type, @max, 'planned')
-		 SELECT SCOPE_IDENTITY()`,
+		 location_name, start_lat, start_lon, tournamenttype, max_participants, status)
+		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
+		 VALUES (@name, @desc, @orgId, @start, @end, @loc, @lat, @lon, @type, @max, 'planned')`,
 		sql.Named("name", input.Name),
 		sql.Named("desc", input.Description),
 		sql.Named("orgId", input.OrganizerID),
@@ -303,12 +305,13 @@ func (s *TournamentService) GetParticipants(c *fiber.Ctx) error {
 	tournamentID := c.Params("id")
 
 	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT p.id, p.user_id, p.kayak_id, p.status, p.current_lat, p.current_lon,
+		`SELECT CAST(p.id AS VARCHAR(36)), CAST(p.user_id AS VARCHAR(36)), CAST(p.kayak_id AS VARCHAR(36)),
+		        p.status, p.current_lat, p.current_lon,
 		        p.score, p.catches_count, p.last_update_time, p.joined_at,
 		        u.username, u.display_name, k.name as kayak_name
 		 FROM tournament_participants p
 		 JOIN users u ON p.user_id = u.id
-		 JOIN kayaks k ON p.kayak_id = k.id
+		 LEFT JOIN kayaks k ON p.kayak_id = k.id
 		 WHERE p.tournament_id = @tournamentId
 		 ORDER BY p.score DESC, p.catches_count DESC`,
 		sql.Named("tournamentId", tournamentID),
@@ -320,7 +323,57 @@ func (s *TournamentService) GetParticipants(c *fiber.Ctx) error {
 
 	participants := []map[string]interface{}{}
 	for rows.Next() {
-		var p map[string]interface{}
+		var id, userID, kayakID, status, username, displayName, kayakName sql.NullString
+		var currentLat, currentLon, score sql.NullFloat64
+		var catchesCount sql.NullInt64
+		var lastUpdateTime, joinedAt sql.NullTime
+
+		if err := rows.Scan(&id, &userID, &kayakID, &status, &currentLat, &currentLon,
+			&score, &catchesCount, &lastUpdateTime, &joinedAt,
+			&username, &displayName, &kayakName); err != nil {
+			continue
+		}
+
+		p := map[string]interface{}{}
+		if id.Valid {
+			p["id"] = id.String
+		}
+		if userID.Valid {
+			p["userId"] = userID.String
+		}
+		if kayakID.Valid {
+			p["kayakId"] = kayakID.String
+		}
+		if status.Valid {
+			p["status"] = status.String
+		}
+		if currentLat.Valid {
+			p["currentLat"] = currentLat.Float64
+		}
+		if currentLon.Valid {
+			p["currentLon"] = currentLon.Float64
+		}
+		if score.Valid {
+			p["score"] = score.Float64
+		}
+		if catchesCount.Valid {
+			p["catchesCount"] = catchesCount.Int64
+		}
+		if lastUpdateTime.Valid {
+			p["lastUpdateTime"] = lastUpdateTime.Time
+		}
+		if joinedAt.Valid {
+			p["joinedAt"] = joinedAt.Time
+		}
+		if username.Valid {
+			p["username"] = username.String
+		}
+		if displayName.Valid {
+			p["displayName"] = displayName.String
+		}
+		if kayakName.Valid {
+			p["kayakName"] = kayakName.String
+		}
 		participants = append(participants, p)
 	}
 
@@ -331,12 +384,13 @@ func (s *TournamentService) GetRanking(c *fiber.Ctx) error {
 	tournamentID := c.Params("id")
 
 	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT p.id, p.user_id, p.score, p.catches_count, p.current_lat, p.current_lon,
+		`SELECT CAST(p.id AS VARCHAR(36)), CAST(p.user_id AS VARCHAR(36)), p.score, p.catches_count,
+		        p.current_lat, p.current_lon,
 		        u.username, u.display_name, k.name as kayak_name,
 		        ROW_NUMBER() OVER (ORDER BY p.score DESC, p.catches_count DESC) as rank
 		 FROM tournament_participants p
 		 JOIN users u ON p.user_id = u.id
-		 JOIN kayaks k ON p.kayak_id = k.id
+		 LEFT JOIN kayaks k ON p.kayak_id = k.id
 		 WHERE p.tournament_id = @tournamentId AND p.status = 'active'`,
 		sql.Named("tournamentId", tournamentID),
 	)
@@ -347,7 +401,46 @@ func (s *TournamentService) GetRanking(c *fiber.Ctx) error {
 
 	ranking := []map[string]interface{}{}
 	for rows.Next() {
-		var r map[string]interface{}
+		var id, userID, username, displayName, kayakName sql.NullString
+		var score, currentLat, currentLon sql.NullFloat64
+		var catchesCount, rank sql.NullInt64
+
+		if err := rows.Scan(&id, &userID, &score, &catchesCount, &currentLat, &currentLon,
+			&username, &displayName, &kayakName, &rank); err != nil {
+			continue
+		}
+
+		r := map[string]interface{}{}
+		if id.Valid {
+			r["id"] = id.String
+		}
+		if userID.Valid {
+			r["userId"] = userID.String
+		}
+		if score.Valid {
+			r["score"] = score.Float64
+		}
+		if catchesCount.Valid {
+			r["catchesCount"] = catchesCount.Int64
+		}
+		if currentLat.Valid {
+			r["currentLat"] = currentLat.Float64
+		}
+		if currentLon.Valid {
+			r["currentLon"] = currentLon.Float64
+		}
+		if username.Valid {
+			r["username"] = username.String
+		}
+		if displayName.Valid {
+			r["displayName"] = displayName.String
+		}
+		if kayakName.Valid {
+			r["kayakName"] = kayakName.String
+		}
+		if rank.Valid {
+			r["rank"] = rank.Int64
+		}
 		ranking = append(ranking, r)
 	}
 
@@ -433,8 +526,8 @@ func (s *TournamentService) RecordCatch(c *fiber.Ctx) error {
 	var catchID string
 	err = tx.QueryRowContext(context.Background(),
 		`INSERT INTO tournament_catches (tournament_id, participant_id, species, weight, latitude, longitude, photo_url)
-		 VALUES (@tournamentId, @participantId, @species, @weight, @lat, @lon, @photoUrl)
-		 SELECT SCOPE_IDENTITY()`,
+		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
+		 VALUES (@tournamentId, @participantId, @species, @weight, @lat, @lon, @photoUrl)`,
 		sql.Named("tournamentId", tournamentID),
 		sql.Named("participantId", input.ParticipantID),
 		sql.Named("species", input.Species),
@@ -471,9 +564,9 @@ func (s *TournamentService) GetCatches(c *fiber.Ctx) error {
 	tournamentID := c.Params("id")
 
 	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT c.id, c.species, c.weight, c.latitude, c.longitude, c.photo_url, 
+		`SELECT CAST(c.id AS VARCHAR(36)), c.species, c.weight, c.latitude, c.longitude, c.photo_url, 
 		        c.verified, c.verified_by, c.created_at,
-		        u.username, p.id as participant_id
+		        u.username, CAST(p.id AS VARCHAR(36)) as participant_id
 		 FROM tournament_catches c
 		 JOIN tournament_participants p ON c.participant_id = p.id
 		 JOIN users u ON p.user_id = u.id
@@ -488,8 +581,50 @@ func (s *TournamentService) GetCatches(c *fiber.Ctx) error {
 
 	catches := []map[string]interface{}{}
 	for rows.Next() {
-		var c map[string]interface{}
-		catches = append(catches, c)
+		var id, species, photoURL, verifiedBy, username, participantID sql.NullString
+		var weight, latitude, longitude sql.NullFloat64
+		var verified bool
+		var createdAt sql.NullTime
+
+		if err := rows.Scan(&id, &species, &weight, &latitude, &longitude, &photoURL,
+			&verified, &verifiedBy, &createdAt, &username, &participantID); err != nil {
+			continue
+		}
+
+		item := map[string]interface{}{
+			"verified": verified,
+		}
+		if id.Valid {
+			item["id"] = id.String
+		}
+		if species.Valid {
+			item["species"] = species.String
+		}
+		if weight.Valid {
+			item["weight"] = weight.Float64
+		}
+		if latitude.Valid {
+			item["latitude"] = latitude.Float64
+		}
+		if longitude.Valid {
+			item["longitude"] = longitude.Float64
+		}
+		if photoURL.Valid {
+			item["photoUrl"] = photoURL.String
+		}
+		if verifiedBy.Valid {
+			item["verifiedBy"] = verifiedBy.String
+		}
+		if createdAt.Valid {
+			item["createdAt"] = createdAt.Time
+		}
+		if username.Valid {
+			item["username"] = username.String
+		}
+		if participantID.Valid {
+			item["participantId"] = participantID.String
+		}
+		catches = append(catches, item)
 	}
 
 	return c.JSON(catches)

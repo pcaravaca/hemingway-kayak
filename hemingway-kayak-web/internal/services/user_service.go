@@ -3,25 +3,31 @@ package services
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+
+	"hemingway-kayak-web/internal/middleware"
+	"hemingway-kayak-web/pkg/auth"
+	"hemingway-kayak-web/pkg/config"
 )
 
 type UserService struct {
-	db *sql.DB
-}
-
-type Claims struct {
-	UserID string `json:"userId"`
-	Email  string `json:"email"`
-	jwt.RegisteredClaims
+	db        *sql.DB
+	jwtSecret []byte
+	revoked   *auth.Revocation
+	ttl       time.Duration
 }
 
 func NewUserService(db *sql.DB) *UserService {
-	return &UserService{db: db}
+	return &UserService{
+		db:        db,
+		jwtSecret: []byte(config.Load().JWTSecret),
+		revoked:   auth.NewRevocation(),
+		ttl:       24 * time.Hour * 7,
+	}
 }
 
 type FiberContext interface {
@@ -61,6 +67,13 @@ func (s *UserService) Register(c *fiber.Ctx) error {
 	var input RegisterInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request body"))
+	}
+
+	if input.Email == "" || input.Username == "" || input.Password == "" {
+		return c.Status(400).JSON(Error("email, username and password are required"))
+	}
+	if len(input.Password) < 8 {
+		return c.Status(400).JSON(Error("password must be at least 8 characters"))
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
@@ -116,34 +129,84 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 		return c.Status(500).JSON(Error("Failed to generate token"))
 	}
 
+	user, err := s.fetchUser(userID)
+	if err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"token":   token,
 		"userId":  userID,
+		"user":    user,
 	})
 }
 
 func (s *UserService) generateToken(userID, email string) (string, error) {
-	claims := Claims{
-		UserID: userID,
-		Email:  email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour * 7)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte("hemingway-kayak-secret-key"))
+	return auth.Generate(s.jwtSecret, userID, email, s.ttl)
 }
 
 func (s *UserService) Logout(c *fiber.Ctx) error {
+	tokenString := strings.TrimSpace(strings.TrimPrefix(c.Get("Authorization"), "Bearer "))
+	if tokenString != "" {
+		if claims, err := auth.Parse(s.jwtSecret, tokenString); err == nil && claims.ExpiresAt != nil {
+			s.revoked.Revoke(tokenString, claims.ExpiresAt.Time)
+		}
+	}
 	return c.JSON(Success("Logged out successfully"))
 }
 
 func (s *UserService) GetUser(c *fiber.Ctx) error {
-	id := c.Params("id")
+	return s.getUserByID(c, c.Params("id"))
+}
 
+// GetProfile devuelve el perfil de un usuario por id.
+func (s *UserService) GetProfile(c *fiber.Ctx) error {
+	return s.getUserByID(c, c.Params("id"))
+}
+
+// GetMe devuelve el usuario autenticado.
+func (s *UserService) GetMe(c *fiber.Ctx) error {
+	return s.getUserByID(c, middleware.UserID(c))
+}
+
+// GetMyStats devuelve contadores del usuario autenticado.
+func (s *UserService) GetMyStats(c *fiber.Ctx) error {
+	id := middleware.UserID(c)
+
+	query := `SELECT
+	  (SELECT COUNT(*) FROM trips WHERE user_id = @id) AS trips,
+	  (SELECT COUNT(*) FROM fishing_spots WHERE user_id = @id) AS spots,
+	  (SELECT COUNT(*) FROM tournament_participants WHERE user_id = @id) AS tournaments,
+	  (SELECT COUNT(*) FROM tracking_sessions WHERE user_id = @id) AS sessions`
+
+	var trips, spots, tournaments, sessions int
+	if err := s.db.QueryRowContext(context.Background(), query, sql.Named("id", id)).
+		Scan(&trips, &spots, &tournaments, &sessions); err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+
+	return c.JSON(fiber.Map{
+		"trips":       trips,
+		"spots":       spots,
+		"tournaments": tournaments,
+		"sessions":    sessions,
+	})
+}
+
+func (s *UserService) getUserByID(c *fiber.Ctx, id string) error {
+	user, err := s.fetchUser(id)
+	if err == sql.ErrNoRows {
+		return c.Status(404).JSON(Error("User not found"))
+	}
+	if err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+	return c.JSON(user)
+}
+
+// fetchUser devuelve el perfil público de un usuario.
+func (s *UserService) fetchUser(id string) (fiber.Map, error) {
 	var user struct {
 		ID              string
 		Email           string
@@ -160,15 +223,11 @@ func (s *UserService) GetUser(c *fiber.Ctx) error {
 		 FROM users WHERE id = @id`,
 		sql.Named("id", id),
 	).Scan(&user.ID, &user.Email, &user.Username, &user.DisplayName, &user.AvatarURL, &user.Bio, &user.TrackingEnabled, &user.CreatedAt)
-
-	if err == sql.ErrNoRows {
-		return c.Status(404).JSON(Error("User not found"))
-	}
 	if err != nil {
-		return c.Status(500).JSON(Error("Database error"))
+		return nil, err
 	}
 
-	return c.JSON(fiber.Map{
+	return fiber.Map{
 		"id":              user.ID,
 		"email":           user.Email,
 		"username":        user.Username,
@@ -177,7 +236,7 @@ func (s *UserService) GetUser(c *fiber.Ctx) error {
 		"bio":             user.Bio.String,
 		"trackingEnabled": user.TrackingEnabled,
 		"createdAt":       user.CreatedAt,
-	})
+	}, nil
 }
 
 func (s *UserService) UpdateUser(c *fiber.Ctx) error {
@@ -217,18 +276,14 @@ func (s *UserService) UpdateUser(c *fiber.Ctx) error {
 	return c.JSON(Success("User updated successfully"))
 }
 
-func (s *UserService) GetProfile(c *fiber.Ctx) error {
-	return s.GetUser(c)
-}
-
 func (s *UserService) GetKayaks(c *fiber.Ctx) error {
-	userID := c.Query("userId")
+	userID := middleware.UserID(c)
 	if userID == "" {
-		return c.Status(400).JSON(Error("userId required"))
+		return c.Status(401).JSON(Error("unauthenticated"))
 	}
 
 	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT id, user_id, name, type, length, width, weight, max_capacity, material, propulsion, image_url 
+		`SELECT id, user_id, name, kaytype, length, width, weight, max_capacity, material, propulsion, image_url 
 		 FROM kayaks WHERE user_id = @userId`,
 		sql.Named("userId", userID),
 	)
@@ -290,9 +345,10 @@ func (s *UserService) CreateKayak(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request body"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	_, err := s.db.ExecContext(context.Background(),
-		`INSERT INTO kayaks (user_id, name, type, length, width, weight, max_capacity, material, propulsion, image_url)
+		`INSERT INTO kayaks (user_id, name, kaytype, length, width, weight, max_capacity, material, propulsion, image_url)
 		 VALUES (@userId, @name, @type, @length, @width, @weight, @maxCapacity, @material, @propulsion, @imageUrl)`,
 		sql.Named("userId", input.UserID),
 		sql.Named("name", input.Name),
@@ -334,7 +390,7 @@ func (s *UserService) UpdateKayak(c *fiber.Ctx) error {
 	}
 
 	_, err := s.db.ExecContext(context.Background(),
-		`UPDATE kayaks SET name = ISNULL(@name, name), type = ISNULL(@type, type),
+		`UPDATE kayaks SET name = ISNULL(@name, name), kaytype = ISNULL(@type, kaytype),
 		 length = ISNULL(@length, length), width = ISNULL(@width, width),
 		 weight = ISNULL(@weight, weight), max_capacity = ISNULL(@maxCapacity, max_capacity),
 		 material = ISNULL(@material, material), propulsion = ISNULL(@propulsion, propulsion),

@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
+
+	"hemingway-kayak-web/internal/middleware"
 )
 
 type TrackingService struct {
@@ -76,12 +79,13 @@ func (s *TrackingService) StartTracking(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO tracking_sessions (user_id, trip_id, start_lat, start_lon, is_live, start_time)
-		 VALUES (@userId, @tripId, @lat, @lon, 1, GETDATE())
-		 SELECT SCOPE_IDENTITY()`,
+		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
+		 VALUES (@userId, @tripId, @lat, @lon, 1, GETDATE())`,
 		sql.Named("userId", input.UserID),
 		sql.Named("tripId", input.TripID),
 		sql.Named("lat", input.Latitude),
@@ -160,6 +164,7 @@ func (s *TrackingService) UpdateLocation(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	_, err := s.db.ExecContext(context.Background(),
 		`UPDATE live_tracking SET 
@@ -185,7 +190,11 @@ func (s *TrackingService) UpdateLocation(c *fiber.Ctx) error {
 		"longitude": input.Longitude, "speed": input.Speed,
 		"heading": input.Heading, "timestamp": time.Now(),
 	})
-	s.redis.Publish(ctx, "tracking:live", data)
+	if s.redis != nil {
+		if err := s.redis.Publish(ctx, "tracking:live", data).Err(); err != nil {
+			log.Printf("Warning: failed to publish tracking update: %v", err)
+		}
+	}
 
 	return c.JSON(Success("Location updated"))
 }

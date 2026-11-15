@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
+	"hemingway-kayak-web/internal/middleware"
 )
 
 type TripService struct {
@@ -24,24 +26,24 @@ func (s *TripService) GetTrips(c *fiber.Ctx) error {
 	query := `SELECT CAST(id AS VARCHAR(36)), CAST(user_id AS VARCHAR(36)), title, description, triptype, status, start_time, end_time, 
 	          start_lat, start_lon, end_lat, end_lon, distance, created_at 
 	          FROM trips WHERE 1=1`
-	args := map[string]interface{}{}
+	var args []interface{}
 
 	if userID != "" {
 		query += " AND user_id = @userId"
-		args["userId"] = userID
+		args = append(args, sql.Named("userId", userID))
 	}
 	if tripType != "" {
 		query += " AND triptype = @type"
-		args["type"] = tripType
+		args = append(args, sql.Named("type", tripType))
 	}
 	if status != "" {
 		query += " AND status = @status"
-		args["status"] = status
+		args = append(args, sql.Named("status", status))
 	}
 
 	query += " ORDER BY created_at DESC"
 
-	rows, err := s.db.QueryContext(context.Background(), query)
+	rows, err := s.db.QueryContext(context.Background(), query, args...)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
 	}
@@ -123,7 +125,7 @@ func (s *TripService) GetTrip(c *fiber.Ctx) error {
 	}
 
 	err := s.db.QueryRowContext(context.Background(),
-		`SELECT id, user_id, title, description, type, status, start_time, end_time,
+		`SELECT id, user_id, title, description, triptype, status, start_time, end_time,
 		 start_lat, start_lon, end_lat, end_lon, distance, created_at 
 		 FROM trips WHERE id = @id`,
 		sql.Named("id", id),
@@ -170,12 +172,13 @@ func (s *TripService) CreateTrip(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request body"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
-		`INSERT INTO trips (user_id, title, description, type, start_lat, start_lon, status, start_time)
-		 VALUES (@userId, @title, @description, @type, @startLat, @startLon, 'planned', GETDATE())
-		 SELECT SCOPE_IDENTITY()`,
+		`INSERT INTO trips (user_id, title, description, triptype, start_lat, start_lon, status, start_time)
+		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
+		 VALUES (@userId, @title, @description, @type, @startLat, @startLon, 'planned', GETDATE())`,
 		sql.Named("userId", input.UserID),
 		sql.Named("title", input.Title),
 		sql.Named("description", input.Description),
@@ -387,12 +390,13 @@ func (s *TripService) CreateSpot(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request body"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO fishing_spots (user_id, name, description, latitude, longitude, is_shared)
-		 VALUES (@userId, @name, @description, @lat, @lon, @isShared)
-		 SELECT SCOPE_IDENTITY()`,
+		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
+		 VALUES (@userId, @name, @description, @lat, @lon, @isShared)`,
 		sql.Named("userId", input.UserID),
 		sql.Named("name", input.Name),
 		sql.Named("description", input.Description),
