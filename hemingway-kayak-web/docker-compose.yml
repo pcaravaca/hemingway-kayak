@@ -1,0 +1,27 @@
+# Hemingway Kayak API — despliegue en el servidor Ubuntu (100.89.167.67)
+#
+# El backend habla con PostgreSQL, que corre en el mismo host dentro del
+# contenedor `fcfeed-pgdev` (publicado en 5499). Dentro de este contenedor el
+# host se resuelve como host.docker.internal (ver extra_hosts + .env).
+#
+# Desplegar:
+#   cd /home/peter/hemingway-kayak
+#   docker compose build --no-cache
+#   docker compose up -d --force-recreate
+#   docker compose ps
+#   curl -s http://localhost:8080/api/v1/health
+#
+# Las credenciales viven en .env (chmod 600, gitignored). NO commitear.
+services:
+  api:
+    build: .
+    image: hemingway-kayak-api:local
+    container_name: hk-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "0.0.0.0:8080:8080"
