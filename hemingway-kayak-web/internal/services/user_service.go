@@ -106,6 +106,10 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request body"))
 	}
+	// Normalizar: si el mail llega con espacios o en mayúsculas (copy-paste,
+	// autocompletado) el SELECT no encuentra la fila y el usuario recibe un
+	// "credenciales inválidas" que no le dice nada.
+	input.Email = strings.ToLower(strings.TrimSpace(input.Email))
 
 	var userID, passwordHash string
 	err := s.db.QueryRowContext(context.Background(),
@@ -114,14 +118,14 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 	).Scan(&userID, &passwordHash)
 
 	if err == sql.ErrNoRows {
-		return c.Status(401).JSON(Error("Invalid credentials"))
+		return c.Status(401).JSON(Error("Ese correo no está registrado"))
 	}
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(input.Password)); err != nil {
-		return c.Status(401).JSON(Error("Invalid credentials"))
+		return c.Status(401).JSON(Error("Contraseña incorrecta"))
 	}
 
 	token, err := s.generateToken(userID, input.Email)
