@@ -471,6 +471,5 @@ Ubuntu (`fcfeed-pgdev`, puerto `5499`). MS SQL queda fuera: no era reachable des
   7 participantes, 8 capturas (5 verificadas), 4 sesiones de tracking, 6 spots, 36 historiales.**
 - Login de demo: `peter@hemingway.com` / `HemingwayKayak2026!` (los 6 usuarios comparten contraseña).
 
-**Documentación:** `README.md` y `hemingway-kayak-web/AGENTS.md` (DDL, dependencias y variables de
-entorno) actualizados a PostgreSQL. Pendiente de aprobación: la sección "MS SQL Server Configuration"
-del mismo `AGENTS.md` (el guard de archivos de instrucciones lo bloqueó).
+**Documentación:** `README.md`, `hemingway-kayak-web/AGENTS.md` y `hemingway-kayak/AGENTS.md`
+(DDL, dependencias, variables de entorno y tech stack) actualizados a PostgreSQL.

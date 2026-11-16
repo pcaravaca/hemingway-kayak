@@ -13,7 +13,7 @@ Web companion app for Hemingway Kayak Android app.
 ### Tech Stack
 - **Backend**: Go 1.21+ with Fiber v2 framework
 - **Frontend**: Vue 3 with Composition API, Pinia, Vue Router
-- **Database**: MS SQL Server 2022
+- **Database**: PostgreSQL 18 (servidor Ubuntu)
 - **Maps**: Leaflet (OSM)
 - **WebSocket**: Fiber WebSocket for real-time updates
 
@@ -38,7 +38,7 @@ hemingway-kayak-web/
 │       └── hub.go
 ├── pkg/
 │   └── database/       # DB connections & migrations
-│       └── database.go # MS SQL, migrations, seed data
+│       └── database.go # PostgreSQL, migrations, seed data
 ├── web/                # Vue 3 frontend
 │   ├── src/
 │   │   ├── assets/
@@ -111,12 +111,13 @@ npm run dev  # Frontend on :5173
 
 ## Database
 
-### MS SQL Server Configuration
-- Host: `10.10.1.21`
-- Port: `1433`
-- Database: `Hemingway`
-- User: `sa`
-- Password: `[REDACTED]`
+### PostgreSQL Configuration
+- Host: `100.89.167.67` (servidor Ubuntu, contenedor `fcfeed-pgdev`)
+- Port: `5499`
+- Database: `hemingway_dev`
+- User: `hemingway`
+- Password: en `.env` (`DB_PASSWORD`). Si `DATABASE_URL` está definida, tiene prioridad.
+- Driver: `github.com/jackc/pgx/v5/stdlib` (nombre de driver `pgx`)
 
 ### Database Tables (Auto-created via migrations)
 
@@ -498,7 +499,7 @@ Body: {"userId": "...", "latitude": 40.8, "longitude": -74.1, "speed": 5.0}
 - Use `PascalCase` for type names
 - Error handling: return `nil` on success, `error` on failure
 - Context passed as first parameter: `func DoThing(ctx context.Context, ...)`
-- **MS SQL**: UNIQUEIDENTIFIER columns must use `CAST(col AS VARCHAR(36))` in SELECT statements
+- **PostgreSQL**: las columnas `UUID` se escanean directo a `string` con `pgx`, sin `CAST`.
 
 ### Vue Conventions
 - Use `<script setup>` syntax
@@ -508,7 +509,7 @@ Body: {"userId": "...", "latitude": 40.8, "longitude": -74.1, "speed": 5.0}
 
 ### Important: Reserved SQL Keywords
 
-MS SQL reserved words like `type` cannot be used as column names. The following renames are used:
+`type` es palabra reservada en SQL. Las columnas usan estos nombres (vigentes en PostgreSQL):
 - `kayaks.type` → `kayaks.kaytype`
 - `trips.type` → `trips.triptype`
 - `tournaments.type` → `tournaments.tournamenttype`
