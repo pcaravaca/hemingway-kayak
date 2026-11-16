@@ -73,6 +73,7 @@ Resumen del análisis completo en [`docs/Hemingway-Kayak-Analisis-2026-11-15.md`
 
 ## Historial
 
-El repositorio Android original (`pcaravaca/hemingway-kayak` en GitHub) queda como archivo
-histórico. Este monorepo arranca con una instantánea; el `.git` original se preservó en
-`~/backups/hk-android-dotgit-20261115` y el bundle en `~/backups/hk-android-20261115.bundle`.
+El monorepo vive en **`github.com/pcaravaca/hemingway-kayak`** (rama `main`). El repositorio
+original de Android quedó **sobrescrito** el 2026-11-16 a pedido de Peter: su historial se
+preservó en local (`~/backups/hk-android-20261115.bundle` y `~/backups/hk-android-dotgit-20261115`),
+así que el cambio de `3a90e56` es recuperable.

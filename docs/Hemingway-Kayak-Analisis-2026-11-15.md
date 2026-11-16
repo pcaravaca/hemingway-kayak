@@ -192,8 +192,10 @@ HemingwayKayak/              # raiz de la solucion (monorepo, un solo git)
 Migración de git (lo que se hizo de verdad, 2026-11-15):
 1. El `.git` original del repo Android se sacó de la carpeta y se preservó en `~/backups/hk-android-dotgit-20261115`; el bundle en `~/backups/hk-android-20261115.bundle`.
 2. El monorepo arrancó con **una instantánea** (`git init` + commit inicial `813c094`), sin reescribir historial.
-3. El repo Android de GitHub (`pcaravaca/hemingway-kayak`) queda intacto como archivo histórico.
-4. Pendiente de decisión: crear el repo GitHub del monorepo y hacer push (requiere aprobación).
+3. El repo Android de GitHub (`pcaravaca/hemingway-kayak`) quedó intacto como archivo histórico **hasta el 2026-11-16** (ver punto 4).
+4. Resuelto el 2026-11-16: el remoto `pcaravaca/hemingway-kayak` se **sobrescribió** con el
+   monorepo (`git push --force origin main`, `3a90e56...3fe292e`). El historial Android quedó
+   preservado en local (`~/backups/hk-android-20261115.bundle`).
 
 **Limpieza obligatoria antes del primer commit:** fuera `hemingway-server` (14 MB), `node_modules/`, `dist/` (se regenera), `.gradle/`, `local.properties`, y el `.git` viejo de 84 MB si se reescribe historial.
 
