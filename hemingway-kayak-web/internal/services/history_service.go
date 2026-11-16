@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,12 +21,12 @@ func (s *HistoryService) GetUserHistory(c *fiber.Ctx) error {
 	historyType := c.Query("type")
 
 	query := `SELECT id, user_id, historytype, reference_id, title, description, data, occurred_at, created_at
-	          FROM history_entries WHERE user_id = @userId`
+	          FROM history_entries WHERE user_id = $1`
 
-	args := []interface{}{sql.Named("userId", userID)}
+	args := []interface{}{userID}
 	if historyType != "" {
-		query += " AND historytype = @type"
-		args = append(args, sql.Named("type", historyType))
+		query += " AND historytype = $" + strconv.Itoa(len(args)+1)
+		args = append(args, historyType)
 	}
 	query += " ORDER BY occurred_at DESC"
 
@@ -87,9 +88,9 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 	        t.distance, t.created_at,
 	        (SELECT COUNT(*) FROM trip_points WHERE trip_id = t.id) as point_count
 	 	FROM trips t
-	 	WHERE t.user_id = @userId
+	 	WHERE t.user_id = $1
 	 	ORDER BY t.created_at DESC`,
-		sql.Named("userId", userID),
+		userID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -141,9 +142,9 @@ func (s *HistoryService) GetTournamentHistory(c *fiber.Ctx) error {
 	        tp.score, tp.catches_count, tp.joined_at
 	 	FROM tournament_participants tp
 	 	JOIN tournaments t ON tp.tournament_id = t.id
-	 	WHERE tp.user_id = @userId
+	 	WHERE tp.user_id = $1
 	 	ORDER BY tp.joined_at DESC`,
-		sql.Named("userId", userID),
+		userID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))

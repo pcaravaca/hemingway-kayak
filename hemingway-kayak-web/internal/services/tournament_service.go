@@ -3,8 +3,11 @@ package services
 import (
 	"context"
 	"database/sql"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+
+	"hemingway-kayak-web/internal/middleware"
 )
 
 type TournamentService struct {
@@ -27,8 +30,8 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 
 	var args []interface{}
 	if status != "" {
-		query += " AND t.status = @status"
-		args = append(args, sql.Named("status", status))
+		query += " AND t.status = $" + strconv.Itoa(len(args)+1)
+		args = append(args, status)
 	}
 	query += " ORDER BY t.start_time DESC"
 
@@ -179,17 +182,19 @@ func (s *TournamentService) GetTournament(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	var tournament struct {
-		ID, Name, Description, OrganizerID, LocationName, Status, Type string
-		StartTime, EndTime                                             sql.NullTime
-		StartLat, StartLon                                             sql.NullFloat64
-		MaxParticipants                                                sql.NullInt64
+		ID, Name                   string
+		Description, OrganizerID   sql.NullString
+		LocationName, Status, Type sql.NullString
+		StartTime, EndTime         sql.NullTime
+		StartLat, StartLon         sql.NullFloat64
+		MaxParticipants            sql.NullInt64
 	}
 
 	err := s.db.QueryRowContext(context.Background(),
 		`SELECT id, name, description, organizer_id, start_time, end_time,
 		        location_name, start_lat, start_lon, status, tournamenttype, max_participants
-		 FROM tournaments WHERE id = @id`,
-		sql.Named("id", id),
+		 FROM tournaments WHERE id = $1`,
+		id,
 	).Scan(&tournament.ID, &tournament.Name, &tournament.Description,
 		&tournament.OrganizerID, &tournament.StartTime, &tournament.EndTime,
 		&tournament.LocationName, &tournament.StartLat, &tournament.StartLon,
@@ -205,15 +210,15 @@ func (s *TournamentService) GetTournament(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"id":              tournament.ID,
 		"name":            tournament.Name,
-		"description":     tournament.Description,
-		"organizerId":     tournament.OrganizerID,
+		"description":     tournament.Description.String,
+		"organizerId":     tournament.OrganizerID.String,
 		"startTime":       tournament.StartTime.Time,
 		"endTime":         tournament.EndTime.Time,
-		"locationName":    tournament.LocationName,
+		"locationName":    tournament.LocationName.String,
 		"startLat":        tournament.StartLat.Float64,
 		"startLon":        tournament.StartLon.Float64,
-		"status":          tournament.Status,
-		"type":            tournament.Type,
+		"status":          tournament.Status.String,
+		"type":            tournament.Type.String,
 		"maxParticipants": tournament.MaxParticipants.Int64,
 	})
 }
@@ -236,23 +241,25 @@ func (s *TournamentService) CreateTournament(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request"))
 	}
+	// El organizador es siempre el usuario autenticado.
+	input.OrganizerID = middleware.UserID(c)
 
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO tournaments (name, description, organizer_id, start_time, end_time, 
 		 location_name, start_lat, start_lon, tournamenttype, max_participants, status)
-		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
-		 VALUES (@name, @desc, @orgId, @start, @end, @loc, @lat, @lon, @type, @max, 'planned')`,
-		sql.Named("name", input.Name),
-		sql.Named("desc", input.Description),
-		sql.Named("orgId", input.OrganizerID),
-		sql.Named("start", input.StartTime),
-		sql.Named("end", input.EndTime),
-		sql.Named("loc", input.LocationName),
-		sql.Named("lat", input.StartLat),
-		sql.Named("lon", input.StartLon),
-		sql.Named("type", input.Type),
-		sql.Named("max", input.MaxParticipants),
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'planned')
+		 RETURNING id::text`,
+		input.Name,
+		input.Description,
+		input.OrganizerID,
+		input.StartTime,
+		input.EndTime,
+		input.LocationName,
+		input.StartLat,
+		input.StartLon,
+		input.Type,
+		input.MaxParticipants,
 	).Scan(&id)
 
 	if err != nil {
@@ -280,18 +287,18 @@ func (s *TournamentService) UpdateTournament(c *fiber.Ctx) error {
 
 	_, err := s.db.ExecContext(context.Background(),
 		`UPDATE tournaments SET 
-		 name = ISNULL(@name, name),
-		 description = ISNULL(@desc, description),
-		 status = ISNULL(@status, status),
-		 start_time = ISNULL(@start, start_time),
-		 end_time = ISNULL(@end, end_time)
-		 WHERE id = @id`,
-		sql.Named("id", id),
-		sql.Named("name", input.Name),
-		sql.Named("desc", input.Description),
-		sql.Named("status", input.Status),
-		sql.Named("start", input.StartTime),
-		sql.Named("end", input.EndTime),
+		 name = COALESCE($1, name),
+		 description = COALESCE($2, description),
+		 status = COALESCE($3, status),
+		 start_time = COALESCE($4, start_time),
+		 end_time = COALESCE($5, end_time)
+		 WHERE id = $6`,
+		input.Name,
+		input.Description,
+		input.Status,
+		input.StartTime,
+		input.EndTime,
+		id,
 	)
 
 	if err != nil {
@@ -312,9 +319,9 @@ func (s *TournamentService) GetParticipants(c *fiber.Ctx) error {
 		 FROM tournament_participants p
 		 JOIN users u ON p.user_id = u.id
 		 LEFT JOIN kayaks k ON p.kayak_id = k.id
-		 WHERE p.tournament_id = @tournamentId
+		 WHERE p.tournament_id = $1
 		 ORDER BY p.score DESC, p.catches_count DESC`,
-		sql.Named("tournamentId", tournamentID),
+		tournamentID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -391,8 +398,8 @@ func (s *TournamentService) GetRanking(c *fiber.Ctx) error {
 		 FROM tournament_participants p
 		 JOIN users u ON p.user_id = u.id
 		 LEFT JOIN kayaks k ON p.kayak_id = k.id
-		 WHERE p.tournament_id = @tournamentId AND p.status = 'active'`,
-		sql.Named("tournamentId", tournamentID),
+		 WHERE p.tournament_id = $1 AND p.status = 'active'`,
+		tournamentID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -459,13 +466,14 @@ func (s *TournamentService) JoinTournament(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	_, err := s.db.ExecContext(context.Background(),
 		`INSERT INTO tournament_participants (tournament_id, user_id, kayak_id, status, joined_at)
-		 VALUES (@tournamentId, @userId, @kayakId, 'registered', GETDATE())`,
-		sql.Named("tournamentId", tournamentID),
-		sql.Named("userId", input.UserID),
-		sql.Named("kayakId", input.KayakID),
+		 VALUES ($1, $2, $3, 'registered', now())`,
+		tournamentID,
+		input.UserID,
+		input.KayakID,
 	)
 
 	if err != nil {
@@ -486,12 +494,13 @@ func (s *TournamentService) LeaveTournament(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	_, err := s.db.ExecContext(context.Background(),
 		`UPDATE tournament_participants SET status = 'left'
-		 WHERE tournament_id = @tournamentId AND user_id = @userId`,
-		sql.Named("tournamentId", tournamentID),
-		sql.Named("userId", input.UserID),
+		 WHERE tournament_id = $1 AND user_id = $2`,
+		tournamentID,
+		input.UserID,
 	)
 
 	if err != nil {
@@ -526,15 +535,15 @@ func (s *TournamentService) RecordCatch(c *fiber.Ctx) error {
 	var catchID string
 	err = tx.QueryRowContext(context.Background(),
 		`INSERT INTO tournament_catches (tournament_id, participant_id, species, weight, latitude, longitude, photo_url)
-		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
-		 VALUES (@tournamentId, @participantId, @species, @weight, @lat, @lon, @photoUrl)`,
-		sql.Named("tournamentId", tournamentID),
-		sql.Named("participantId", input.ParticipantID),
-		sql.Named("species", input.Species),
-		sql.Named("weight", input.Weight),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
-		sql.Named("photoUrl", input.PhotoURL),
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 RETURNING id::text`,
+		tournamentID,
+		input.ParticipantID,
+		input.Species,
+		input.Weight,
+		input.Latitude,
+		input.Longitude,
+		input.PhotoURL,
 	).Scan(&catchID)
 
 	if err != nil {
@@ -545,10 +554,10 @@ func (s *TournamentService) RecordCatch(c *fiber.Ctx) error {
 	_, err = tx.ExecContext(context.Background(),
 		`UPDATE tournament_participants SET 
 		 catches_count = catches_count + 1,
-		 score = score + @weight
-		 WHERE id = @participantId`,
-		sql.Named("participantId", input.ParticipantID),
-		sql.Named("weight", input.Weight),
+		 score = score + $1
+		 WHERE id = $2`,
+		input.Weight,
+		input.ParticipantID,
 	)
 
 	if err != nil {
@@ -570,9 +579,9 @@ func (s *TournamentService) GetCatches(c *fiber.Ctx) error {
 		 FROM tournament_catches c
 		 JOIN tournament_participants p ON c.participant_id = p.id
 		 JOIN users u ON p.user_id = u.id
-		 WHERE c.tournament_id = @tournamentId
+		 WHERE c.tournament_id = $1
 		 ORDER BY c.weight DESC`,
-		sql.Named("tournamentId", tournamentID),
+		tournamentID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))

@@ -12,7 +12,7 @@ import (
 //
 // Ej.: RequireResourceOwnership(db, "trips", "user_id", "id")
 func RequireResourceOwnership(db *sql.DB, table, ownerColumn, param string) fiber.Handler {
-	query := "SELECT CAST(" + ownerColumn + " AS VARCHAR(36)) FROM " + table + " WHERE id = @id"
+	query := "SELECT CAST(" + ownerColumn + " AS VARCHAR(36)) FROM " + table + " WHERE id = $1"
 
 	return func(c *fiber.Ctx) error {
 		id := c.Params(param)
@@ -21,7 +21,7 @@ func RequireResourceOwnership(db *sql.DB, table, ownerColumn, param string) fibe
 		}
 
 		var owner string
-		err := db.QueryRowContext(c.Context(), query, sql.Named("id", id)).Scan(&owner)
+		err := db.QueryRowContext(c.Context(), query, id).Scan(&owner)
 		if err == sql.ErrNoRows {
 			return c.Status(404).JSON(fiber.Map{"success": false, "error": "not found"})
 		}

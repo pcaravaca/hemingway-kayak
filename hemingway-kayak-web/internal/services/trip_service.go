@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -29,16 +30,16 @@ func (s *TripService) GetTrips(c *fiber.Ctx) error {
 	var args []interface{}
 
 	if userID != "" {
-		query += " AND user_id = @userId"
-		args = append(args, sql.Named("userId", userID))
+		query += " AND user_id = $" + strconv.Itoa(len(args)+1)
+		args = append(args, userID)
 	}
 	if tripType != "" {
-		query += " AND triptype = @type"
-		args = append(args, sql.Named("type", tripType))
+		query += " AND triptype = $" + strconv.Itoa(len(args)+1)
+		args = append(args, tripType)
 	}
 	if status != "" {
-		query += " AND status = @status"
-		args = append(args, sql.Named("status", status))
+		query += " AND status = $" + strconv.Itoa(len(args)+1)
+		args = append(args, status)
 	}
 
 	query += " ORDER BY created_at DESC"
@@ -127,8 +128,8 @@ func (s *TripService) GetTrip(c *fiber.Ctx) error {
 	err := s.db.QueryRowContext(context.Background(),
 		`SELECT id, user_id, title, description, triptype, status, start_time, end_time,
 		 start_lat, start_lon, end_lat, end_lon, distance, created_at 
-		 FROM trips WHERE id = @id`,
-		sql.Named("id", id),
+		 FROM trips WHERE id = $1`,
+		id,
 	).Scan(&trip.ID, &trip.UserID, &trip.Title, &trip.Description, &trip.Type, &trip.Status,
 		&trip.StartTime, &trip.EndTime, &trip.StartLat, &trip.StartLon, &trip.EndLat, &trip.EndLon,
 		&trip.Distance, &trip.CreatedAt)
@@ -177,14 +178,14 @@ func (s *TripService) CreateTrip(c *fiber.Ctx) error {
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO trips (user_id, title, description, triptype, start_lat, start_lon, status, start_time)
-		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
-		 VALUES (@userId, @title, @description, @type, @startLat, @startLon, 'planned', GETDATE())`,
-		sql.Named("userId", input.UserID),
-		sql.Named("title", input.Title),
-		sql.Named("description", input.Description),
-		sql.Named("type", input.Type),
-		sql.Named("startLat", input.StartLat),
-		sql.Named("startLon", input.StartLon),
+		 VALUES ($1, $2, $3, $4, $5, $6, 'planned', now())
+		 RETURNING id::text`,
+		input.UserID,
+		input.Title,
+		input.Description,
+		input.Type,
+		input.StartLat,
+		input.StartLon,
 	).Scan(&id)
 
 	if err != nil {
@@ -212,23 +213,23 @@ func (s *TripService) UpdateTrip(c *fiber.Ctx) error {
 	}
 
 	query := `UPDATE trips SET 
-		title = ISNULL(@title, title),
-		description = ISNULL(@description, description),
-		status = ISNULL(@status, status),
-		end_lat = ISNULL(@endLat, end_lat),
-		end_lon = ISNULL(@endLon, end_lon),
-		distance = ISNULL(@distance, distance),
-		end_time = CASE WHEN @status IN ('completed', 'cancelled') THEN GETDATE() ELSE end_time END
-		WHERE id = @id`
+		title = COALESCE($1, title),
+		description = COALESCE($2, description),
+		status = COALESCE($3, status),
+		end_lat = COALESCE($4, end_lat),
+		end_lon = COALESCE($5, end_lon),
+		distance = COALESCE($6, distance),
+		end_time = CASE WHEN $3 IN ('completed', 'cancelled') THEN now() ELSE end_time END
+		WHERE id = $7`
 
 	_, err := s.db.ExecContext(context.Background(), query,
-		sql.Named("id", id),
-		sql.Named("title", input.Title),
-		sql.Named("description", input.Description),
-		sql.Named("status", input.Status),
-		sql.Named("endLat", input.EndLat),
-		sql.Named("endLon", input.EndLon),
-		sql.Named("distance", input.Distance),
+		input.Title,
+		input.Description,
+		input.Status,
+		input.EndLat,
+		input.EndLon,
+		input.Distance,
+		id,
 	)
 
 	if err != nil {
@@ -242,8 +243,8 @@ func (s *TripService) DeleteTrip(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	_, err := s.db.ExecContext(context.Background(),
-		"DELETE FROM trips WHERE id = @id",
-		sql.Named("id", id),
+		"DELETE FROM trips WHERE id = $1",
+		id,
 	)
 
 	if err != nil {
@@ -258,8 +259,8 @@ func (s *TripService) GetTripPoints(c *fiber.Ctx) error {
 
 	rows, err := s.db.QueryContext(context.Background(),
 		`SELECT id, trip_id, latitude, longitude, altitude, speed, heading, timestamp 
-		 FROM trip_points WHERE trip_id = @tripId ORDER BY timestamp ASC`,
-		sql.Named("tripId", tripID),
+		 FROM trip_points WHERE trip_id = $1 ORDER BY timestamp ASC`,
+		tripID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -313,13 +314,13 @@ func (s *TripService) AddTripPoint(c *fiber.Ctx) error {
 
 	_, err := s.db.ExecContext(context.Background(),
 		`INSERT INTO trip_points (trip_id, latitude, longitude, altitude, speed, heading, timestamp)
-		 VALUES (@tripId, @lat, @lon, @altitude, @speed, @heading, GETDATE())`,
-		sql.Named("tripId", tripID),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
-		sql.Named("altitude", input.Altitude),
-		sql.Named("speed", input.Speed),
-		sql.Named("heading", input.Heading),
+		 VALUES ($1, $2, $3, $4, $5, $6, now())`,
+		tripID,
+		input.Latitude,
+		input.Longitude,
+		input.Altitude,
+		input.Speed,
+		input.Heading,
 	)
 
 	if err != nil {
@@ -336,7 +337,7 @@ func (s *TripService) GetSharedSpots(c *fiber.Ctx) error {
 		        u.username, u.display_name
 		 FROM fishing_spots fs
 		 JOIN users u ON fs.user_id = u.id
-		 WHERE fs.is_shared = 1
+		 WHERE fs.is_shared = TRUE
 		 ORDER BY fs.rating DESC, fs.fish_caught DESC`,
 	)
 	if err != nil {
@@ -395,14 +396,14 @@ func (s *TripService) CreateSpot(c *fiber.Ctx) error {
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO fishing_spots (user_id, name, description, latitude, longitude, is_shared)
-		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
-		 VALUES (@userId, @name, @description, @lat, @lon, @isShared)`,
-		sql.Named("userId", input.UserID),
-		sql.Named("name", input.Name),
-		sql.Named("description", input.Description),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
-		sql.Named("isShared", input.IsShared),
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 RETURNING id::text`,
+		input.UserID,
+		input.Name,
+		input.Description,
+		input.Latitude,
+		input.Longitude,
+		input.IsShared,
 	).Scan(&id)
 
 	if err != nil {
@@ -430,18 +431,18 @@ func (s *TripService) UpdateSpot(c *fiber.Ctx) error {
 
 	_, err := s.db.ExecContext(context.Background(),
 		`UPDATE fishing_spots SET 
-		 name = ISNULL(@name, name),
-		 description = ISNULL(@description, description),
-		 rating = ISNULL(@rating, rating),
-		 fish_caught = ISNULL(@fishCaught, fish_caught),
-		 is_shared = ISNULL(@isShared, is_shared)
-		 WHERE id = @id`,
-		sql.Named("id", id),
-		sql.Named("name", input.Name),
-		sql.Named("description", input.Description),
-		sql.Named("rating", input.Rating),
-		sql.Named("fishCaught", input.FishCaught),
-		sql.Named("isShared", input.IsShared),
+		 name = COALESCE($1, name),
+		 description = COALESCE($2, description),
+		 rating = COALESCE($3, rating),
+		 fish_caught = COALESCE($4, fish_caught),
+		 is_shared = COALESCE($5, is_shared)
+		 WHERE id = $6`,
+		input.Name,
+		input.Description,
+		input.Rating,
+		input.FishCaught,
+		input.IsShared,
+		id,
 	)
 
 	if err != nil {
@@ -455,8 +456,8 @@ func (s *TripService) DeleteSpot(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	_, err := s.db.ExecContext(context.Background(),
-		"DELETE FROM fishing_spots WHERE id = @id",
-		sql.Named("id", id),
+		"DELETE FROM fishing_spots WHERE id = $1",
+		id,
 	)
 
 	if err != nil {

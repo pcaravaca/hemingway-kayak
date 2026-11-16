@@ -18,7 +18,7 @@ HemingwayKayak/
 ├── hemingway-kayak-web/      # Backend + frontend
 │   ├── cmd/server/           # entrypoint Go (Fiber)
 │   ├── internal/             # api, models, services, ws
-│   ├── pkg/                  # database (MS SQL), auth (JWT)
+│   ├── pkg/                  # database (PostgreSQL), auth (JWT)
 │   ├── migrations/           # SQL de migración
 │   └── web/                  # frontend Vue 3 + Vite + Tailwind
 ├── docs/                     # análisis, plan de desarrollo, decisiones
@@ -35,7 +35,7 @@ HemingwayKayak/
 | Android | Gradle | 8.2 (via wrapper) |
 | Backend | Go | 1.25.0 (ver `go.mod`) |
 | Frontend | Node | 18+ |
-| BD | MS SQL Server | ver `migrations/` |
+| BD | PostgreSQL | 18 (servidor Ubuntu `100.89.167.67:5499`, ver `migrations/`) |
 
 ## Cómo ejecutar
 
@@ -60,17 +60,16 @@ npm run dev        # Vite
 npm run build      # salida en web/dist/
 ```
 
-## Estado del proyecto (2026-11-15)
+## Estado del proyecto (2026-11-16)
 
 Resumen del análisis completo en [`docs/Hemingway-Kayak-Analisis-2026-11-15.md`](docs/Hemingway-Kayak-Analisis-2026-11-15.md).
 
-- **Android**: el trabajo real (fragments, ViewModels, `nav_graph`, 6 tests, `compileSdk 36`,
-  `osmdroid`) se recuperó del `git stash`; el árbol anterior estaba despojado.
-- **Backend**: compila, pero la conexión a MS SQL está rota (`Sprintf` con 4 verbos y 5 args)
-  y usa columnas `type` donde el esquema tiene `kaytype`/`triptype`/`tournamenttype`/`historytype`.
-  Sin middleware JWT.
-- **Frontend**: login degradado (`/auth/me` inexistente → logout en cascada), `localhost:8080`
-  hardcodeado, socket de tracking sin reconexión.
+- **Android**: construye (`assembleDebug` → APK 9,6 MB), 26 tests verdes, `lintDebug` 0 errores.
+- **Backend**: migrado de MS SQL Server a **PostgreSQL 18** (servidor Ubuntu). JWT + ownership,
+  migraciones y seed ampliado; 37/37 llamadas probadas end-to-end contra la DB real.
+- **Frontend**: auth de punta a punta, rutas protegidas, 5 vistas nuevas, build limpio.
+- **Datos de demo**: 6 usuarios, 7 kayaks, 6 viajes con track, 3 torneos, 7 participantes,
+  8 capturas, 36 entradas de historial. Login: `peter@hemingway.com` / `HemingwayKayak2026!`
 
 ## Historial
 

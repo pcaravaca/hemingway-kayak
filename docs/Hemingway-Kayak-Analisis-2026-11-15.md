@@ -380,7 +380,7 @@ Commit local `68bd291` (no pusheado). **17 tests PASS**, `go build ./...` y `go 
 - `Dockerfile` multi-stage (golang:1.25 → distroless) + `.dockerignore`.
 - `main.go`: validación de config y **graceful shutdown** (antes ignoraba el error de `Listen`).
 
-**Bloqueante (no verificable aquí):** `10.10.1.21:1433` no es alcanzable desde WSL (`connect: no route to host`). El backend compila y arranca, pero **no se pudo probar contra la base real**. Tampoco hay Redis local (el código lo tolera con nil).
+**Bloqueante (no verificable aquí):** `10.10.1.21:1433` no es alcanzable desde WSL (`connect: no route to host`). El backend compila y arranca, pero **no se pudo probar contra la base real**. Tampoco hay Redis local (el código lo tolera con nil). → **Resuelto: ver sección 16 (migración a PostgreSQL).**
 
 **Nota para F3:** `web/src/stores/auth.js` aún espera `token` en `register` (el backend no lo emite), mapea errores con `data.message` (el backend usa `error`) y su `logout()` local no llama al backend.
 
@@ -431,3 +431,44 @@ Commit local `68bd291` (no pusheado). **17 tests PASS**, `go build ./...` y `go 
 **Alcance:** `PlacesManager`, `SonarManager` y `EmergencyNotifier` se **recortan del alcance de F4** (compilan, no están referenciados; no aportan). `BootReceiver` deja de ser stub: ahora sí programa el chequeo periódico.
 
 **Seguimiento:** GT Kanban personal — F3 → `✅ Personal Done`, F4 → `▶️ Personal In Progress`. Honcho actualizado.
+
+---
+
+## 16. Migración a PostgreSQL (2026-11-16) — hecho y verificado
+
+**Decisión:** se descarta MS SQL Server y se usa el **PostgreSQL 18** que ya corre en el servidor
+Ubuntu (`fcfeed-pgdev`, puerto `5499`). MS SQL queda fuera: no era reachable desde WSL y no aportaba nada.
+
+**Rol y base nuevos** (en `fcfeed-pgdev`, creados con `openssl rand -hex 20`):
+- role `hemingway` (LOGIN) + base `hemingway_dev` (owner `hemingway`, `GRANT ALL ON SCHEMA public`).
+- Credenciales en `hemingway-kayak-web/.env` (gitignored). `DATABASE_URL` tiene prioridad si se define.
+
+**Código**
+- `go.mod`: fuera `microsoft/go-mssqldb`, dentro `github.com/jackc/pgx/v5` (driver `pgx`).
+- `pkg/config`: DSN de PostgreSQL con escape de password (`quoteDSNValue`), defaults al server Ubuntu,
+  `DATABASE_URL` como override, `Validate()` ajustado.
+- `pkg/database`: `EnsureDatabase` contra `pg_database`; `schema_migrations` en `TEXT/TIMESTAMPTZ`;
+  seed reescrito a PG (`gen_random_uuid()`, `now()`, booleanos, `generate_series` para los tracks).
+- `migrations/001_init.sql`: DDL PostgreSQL (`UUID`, `TIMESTAMPTZ`, `BOOLEAN`, `DOUBLE PRECISION`, `TEXT`).
+- Servicios y middleware: **126 `sql.Named(@x)` → `$N` posicionales**, `ISNULL`→`COALESCE`,
+  `GETDATE()`→`now()`, `OUTPUT INSERTED.id`→`RETURNING id::text`, booleanos `= 1/0`→`TRUE/FALSE`.
+
+**Bugs reales que la migración destapó** (estaban latentes, no los introdujo el cambio de motor):
+- `GetTournament` escaneaba columnas nullables a `string` → 500 con el seed.
+- `CreateTournament` / `JoinTournament` / `LeaveTournament` / `StopTracking` no tomaban el usuario del
+  JWT → `uuid` vacío → 500. Ahora se toman de `middleware.UserID(c)`.
+- `CreateKayak` no devolvía el `id` recién creado (el frontend lo necesita).
+- Los filtros dinámicos (`/trips?type=`, `?status=`) usaban `$N` fijos en vez de `len(args)+1`.
+
+**Verificado contra la DB real (no solo compilando)**
+- `go build`, `go vet`, `go test` verdes.
+- El servidor arranca, aplica `001_init.sql` y el seed.
+- **Smoke test end-to-end: 37/37 llamadas OK** (auth, users, kayaks, trips + puntos, torneos,
+  participantes, ranking, catches, tracking start/point/stop, spots, historial, update de usuario).
+- Seed de demostración: **6 usuarios, 7 kayaks, 6 viajes, 49 puntos de track, 3 torneos,
+  7 participantes, 8 capturas (5 verificadas), 4 sesiones de tracking, 6 spots, 36 historiales.**
+- Login de demo: `peter@hemingway.com` / `HemingwayKayak2026!` (los 6 usuarios comparten contraseña).
+
+**Documentación:** `README.md` y `hemingway-kayak-web/AGENTS.md` (DDL, dependencias y variables de
+entorno) actualizados a PostgreSQL. Pendiente de aprobación: la sección "MS SQL Server Configuration"
+del mismo `AGENTS.md` (el guard de archivos de instrucciones lo bloqueó).

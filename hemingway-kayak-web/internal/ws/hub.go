@@ -23,13 +23,13 @@ type roomEvent struct {
 // Hub administra clientes y salas. Todas las estructuras se tocan sólo desde
 // el goroutine de Run, o bajo el mutex, para no correr carreras.
 type Hub struct {
-	mu        sync.RWMutex
-	clients   map[*websocket.Conn]map[string]bool
-	broadcast chan Message
-	register  chan *websocket.Conn
+	mu         sync.RWMutex
+	clients    map[*websocket.Conn]map[string]bool
+	broadcast  chan Message
+	register   chan *websocket.Conn
 	unregister chan *websocket.Conn
-	join      chan roomEvent
-	leave     chan roomEvent
+	join       chan roomEvent
+	leave      chan roomEvent
 }
 
 func NewHub() *Hub {

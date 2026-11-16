@@ -18,11 +18,11 @@ func TestLoadDefaults(t *testing.T) {
 
 	cfg := Load()
 
-	if cfg.DBServer != "10.10.1.21" {
+	if cfg.DBServer != "100.89.167.67" {
 		t.Errorf("DBServer = %q, want default", cfg.DBServer)
 	}
-	if cfg.DBPort != 1433 {
-		t.Errorf("DBPort = %d, want 1433", cfg.DBPort)
+	if cfg.DBPort != 5499 {
+		t.Errorf("DBPort = %d, want 5499", cfg.DBPort)
 	}
 	if cfg.Port != "8080" {
 		t.Errorf("Port = %q, want 8080", cfg.Port)
@@ -56,12 +56,28 @@ func TestValidateOK(t *testing.T) {
 }
 
 func TestDSN(t *testing.T) {
-	cfg := &Config{DBServer: "h", DBPort: 1433, DBUser: "sa", DBPassword: "p", DBName: "Hemingway"}
+	cfg := &Config{DBServer: "h", DBPort: 5499, DBUser: "hemingway", DBPassword: "p", DBName: "hemingway_dev"}
 	got := cfg.DSN(cfg.DBName)
-	for _, want := range []string{"server=h", "port=1433", "database=Hemingway", "user id=sa", "password=p", "encrypt=disable"} {
+	for _, want := range []string{"host=h", "port=5499", "dbname=hemingway_dev", "user=hemingway", "password=p", "sslmode=disable"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("DSN %q missing %q", got, want)
 		}
+	}
+}
+
+func TestDSNDatabaseURLWins(t *testing.T) {
+	url := "postgres://u:p@db:5432/app?sslmode=require"
+	cfg := &Config{DatabaseURL: url, DBServer: "h", DBPort: 5499, DBUser: "x", DBPassword: "y", DBName: "z"}
+	if got := cfg.DSN("ignored"); got != url {
+		t.Errorf("DSN = %q, want DATABASE_URL %q", got, url)
+	}
+}
+
+func TestDSNEscapesPassword(t *testing.T) {
+	cfg := &Config{DBServer: "h", DBPort: 5499, DBUser: "u", DBPassword: `a'b\c`, DBName: "d"}
+	got := cfg.DSN(cfg.DBName)
+	if !strings.Contains(got, `password='a\'b\\c'`) {
+		t.Errorf("DSN no escapa el password: %q", got)
 	}
 }
 

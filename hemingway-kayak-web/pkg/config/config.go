@@ -12,6 +12,7 @@ import (
 
 // Config es la configuración inmutable que usa todo el backend.
 type Config struct {
+	DatabaseURL   string
 	DBServer      string
 	DBPort        int
 	DBUser        string
@@ -30,11 +31,12 @@ type Config struct {
 func Load() *Config {
 	loadDotEnv()
 	return &Config{
-		DBServer:      getenv("DB_SERVER", "10.10.1.21"),
-		DBPort:        getenvInt("DB_PORT", 1433),
-		DBUser:        getenv("DB_USER", "sa"),
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		DBServer:      getenv("DB_SERVER", "100.89.167.67"),
+		DBPort:        getenvInt("DB_PORT", 5499),
+		DBUser:        getenv("DB_USER", "hemingway"),
 		DBPassword:    os.Getenv("DB_PASSWORD"),
-		DBName:        getenv("DB_NAME", "Hemingway"),
+		DBName:        getenv("DB_NAME", "hemingway_dev"),
 		JWTSecret:     os.Getenv("JWT_SECRET"),
 		RedisAddr:     getenv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword: os.Getenv("REDIS_PASSWORD"),
@@ -43,20 +45,31 @@ func Load() *Config {
 	}
 }
 
-// DSN devuelve el connection string para go-mssqldb.
+// DSN devuelve el connection string de PostgreSQL. DATABASE_URL tiene prioridad
+// sobre las variables sueltas; si se usan éstas, el password se escapa.
 func (c *Config) DSN(database string) string {
-	return "server=" + c.DBServer +
-		";port=" + strconv.Itoa(c.DBPort) +
-		";database=" + database +
-		";user id=" + c.DBUser +
-		";password=" + c.DBPassword +
-		";encrypt=disable"
+	if c.DatabaseURL != "" {
+		return c.DatabaseURL
+	}
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		c.DBServer, c.DBPort, c.DBUser, quoteDSNValue(c.DBPassword), database)
+}
+
+// quoteDSNValue envuelve entre comillas simples un valor que lo necesite,
+// escapando ' y \ para el formato de palabras clave de PostgreSQL.
+func quoteDSNValue(v string) string {
+	if !strings.ContainsAny(v, ` '\`) {
+		return v
+	}
+	v = strings.ReplaceAll(v, `\`, `\\`)
+	v = strings.ReplaceAll(v, `'`, `\'`)
+	return `'` + v + `'`
 }
 
 // Validate falla rápido si falta configuración sensible.
 func (c *Config) Validate() error {
 	var missing []string
-	if c.DBPassword == "" {
+	if c.DatabaseURL == "" && c.DBPassword == "" {
 		missing = append(missing, "DB_PASSWORD")
 	}
 	if c.JWTSecret == "" {

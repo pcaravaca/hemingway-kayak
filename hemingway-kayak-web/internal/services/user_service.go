@@ -83,11 +83,11 @@ func (s *UserService) Register(c *fiber.Ctx) error {
 
 	_, err = s.db.ExecContext(context.Background(),
 		`INSERT INTO users (email, username, password_hash, display_name) 
-		 VALUES (@email, @username, @password, @displayName)`,
-		sql.Named("email", input.Email),
-		sql.Named("username", input.Username),
-		sql.Named("password", string(hashedPassword)),
-		sql.Named("displayName", input.DisplayName),
+		 VALUES ($1, $2, $3, $4)`,
+		input.Email,
+		input.Username,
+		string(hashedPassword),
+		input.DisplayName,
 	)
 	if err != nil {
 		return c.Status(400).JSON(Error("Email or username already exists"))
@@ -109,8 +109,8 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 
 	var userID, passwordHash string
 	err := s.db.QueryRowContext(context.Background(),
-		"SELECT id, password_hash FROM users WHERE email = @email",
-		sql.Named("email", input.Email),
+		"SELECT id, password_hash FROM users WHERE email = $1",
+		input.Email,
 	).Scan(&userID, &passwordHash)
 
 	if err == sql.ErrNoRows {
@@ -175,13 +175,13 @@ func (s *UserService) GetMyStats(c *fiber.Ctx) error {
 	id := middleware.UserID(c)
 
 	query := `SELECT
-	  (SELECT COUNT(*) FROM trips WHERE user_id = @id) AS trips,
-	  (SELECT COUNT(*) FROM fishing_spots WHERE user_id = @id) AS spots,
-	  (SELECT COUNT(*) FROM tournament_participants WHERE user_id = @id) AS tournaments,
-	  (SELECT COUNT(*) FROM tracking_sessions WHERE user_id = @id) AS sessions`
+	  (SELECT COUNT(*) FROM trips WHERE user_id = $1) AS trips,
+	  (SELECT COUNT(*) FROM fishing_spots WHERE user_id = $1) AS spots,
+	  (SELECT COUNT(*) FROM tournament_participants WHERE user_id = $1) AS tournaments,
+	  (SELECT COUNT(*) FROM tracking_sessions WHERE user_id = $1) AS sessions`
 
 	var trips, spots, tournaments, sessions int
-	if err := s.db.QueryRowContext(context.Background(), query, sql.Named("id", id)).
+	if err := s.db.QueryRowContext(context.Background(), query, id).
 		Scan(&trips, &spots, &tournaments, &sessions); err != nil {
 		return c.Status(500).JSON(Error("Database error"))
 	}
@@ -220,8 +220,8 @@ func (s *UserService) fetchUser(id string) (fiber.Map, error) {
 
 	err := s.db.QueryRowContext(context.Background(),
 		`SELECT id, email, username, display_name, avatar_url, bio, tracking_enabled, created_at 
-		 FROM users WHERE id = @id`,
-		sql.Named("id", id),
+		 FROM users WHERE id = $1`,
+		id,
 	).Scan(&user.ID, &user.Email, &user.Username, &user.DisplayName, &user.AvatarURL, &user.Bio, &user.TrackingEnabled, &user.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -256,17 +256,17 @@ func (s *UserService) UpdateUser(c *fiber.Ctx) error {
 
 	_, err := s.db.ExecContext(context.Background(),
 		`UPDATE users SET 
-		 display_name = ISNULL(@displayName, display_name),
-		 bio = ISNULL(@bio, bio), 
-		 avatar_url = ISNULL(@avatarUrl, avatar_url),
-		 tracking_enabled = ISNULL(@trackingEnabled, tracking_enabled),
-		 updated_at = GETDATE()
-		 WHERE id = @id`,
-		sql.Named("id", id),
-		sql.Named("displayName", input.DisplayName),
-		sql.Named("bio", input.Bio),
-		sql.Named("avatarUrl", input.AvatarURL),
-		sql.Named("trackingEnabled", input.TrackingEnabled),
+		 display_name = COALESCE($1, display_name),
+		 bio = COALESCE($2, bio), 
+		 avatar_url = COALESCE($3, avatar_url),
+		 tracking_enabled = COALESCE($4, tracking_enabled),
+		 updated_at = now()
+		 WHERE id = $5`,
+		input.DisplayName,
+		input.Bio,
+		input.AvatarURL,
+		input.TrackingEnabled,
+		id,
 	)
 
 	if err != nil {
@@ -284,8 +284,8 @@ func (s *UserService) GetKayaks(c *fiber.Ctx) error {
 
 	rows, err := s.db.QueryContext(context.Background(),
 		`SELECT id, user_id, name, kaytype, length, width, weight, max_capacity, material, propulsion, image_url 
-		 FROM kayaks WHERE user_id = @userId`,
-		sql.Named("userId", userID),
+		 FROM kayaks WHERE user_id = $1`,
+		userID,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -347,26 +347,28 @@ func (s *UserService) CreateKayak(c *fiber.Ctx) error {
 	}
 	input.UserID = middleware.UserID(c)
 
-	_, err := s.db.ExecContext(context.Background(),
+	var id string
+	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO kayaks (user_id, name, kaytype, length, width, weight, max_capacity, material, propulsion, image_url)
-		 VALUES (@userId, @name, @type, @length, @width, @weight, @maxCapacity, @material, @propulsion, @imageUrl)`,
-		sql.Named("userId", input.UserID),
-		sql.Named("name", input.Name),
-		sql.Named("type", input.Type),
-		sql.Named("length", input.Length),
-		sql.Named("width", input.Width),
-		sql.Named("weight", input.Weight),
-		sql.Named("maxCapacity", input.MaxCapacity),
-		sql.Named("material", input.Material),
-		sql.Named("propulsion", input.Propulsion),
-		sql.Named("imageUrl", input.ImageURL),
-	)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		 RETURNING id::text`,
+		input.UserID,
+		input.Name,
+		input.Type,
+		input.Length,
+		input.Width,
+		input.Weight,
+		input.MaxCapacity,
+		input.Material,
+		input.Propulsion,
+		input.ImageURL,
+	).Scan(&id)
 
 	if err != nil {
 		return c.Status(500).JSON(Error("Failed to create kayak"))
 	}
 
-	return c.Status(201).JSON(Success("Kayak created"))
+	return c.Status(201).JSON(fiber.Map{"id": id, "success": true})
 }
 
 func (s *UserService) UpdateKayak(c *fiber.Ctx) error {
@@ -390,22 +392,22 @@ func (s *UserService) UpdateKayak(c *fiber.Ctx) error {
 	}
 
 	_, err := s.db.ExecContext(context.Background(),
-		`UPDATE kayaks SET name = ISNULL(@name, name), kaytype = ISNULL(@type, kaytype),
-		 length = ISNULL(@length, length), width = ISNULL(@width, width),
-		 weight = ISNULL(@weight, weight), max_capacity = ISNULL(@maxCapacity, max_capacity),
-		 material = ISNULL(@material, material), propulsion = ISNULL(@propulsion, propulsion),
-		 image_url = ISNULL(@imageUrl, image_url)
-		 WHERE id = @id`,
-		sql.Named("id", id),
-		sql.Named("name", input.Name),
-		sql.Named("type", input.Type),
-		sql.Named("length", input.Length),
-		sql.Named("width", input.Width),
-		sql.Named("weight", input.Weight),
-		sql.Named("maxCapacity", input.MaxCapacity),
-		sql.Named("material", input.Material),
-		sql.Named("propulsion", input.Propulsion),
-		sql.Named("imageUrl", input.ImageURL),
+		`UPDATE kayaks SET name = COALESCE($1, name), kaytype = COALESCE($2, kaytype),
+		 length = COALESCE($3, length), width = COALESCE($4, width),
+		 weight = COALESCE($5, weight), max_capacity = COALESCE($6, max_capacity),
+		 material = COALESCE($7, material), propulsion = COALESCE($8, propulsion),
+		 image_url = COALESCE($9, image_url)
+		 WHERE id = $10`,
+		input.Name,
+		input.Type,
+		input.Length,
+		input.Width,
+		input.Weight,
+		input.MaxCapacity,
+		input.Material,
+		input.Propulsion,
+		input.ImageURL,
+		id,
 	)
 
 	if err != nil {
@@ -419,8 +421,8 @@ func (s *UserService) DeleteKayak(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	_, err := s.db.ExecContext(context.Background(),
-		"DELETE FROM kayaks WHERE id = @id",
-		sql.Named("id", id),
+		"DELETE FROM kayaks WHERE id = $1",
+		id,
 	)
 
 	if err != nil {

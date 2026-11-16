@@ -41,8 +41,8 @@ func (s *TrackingService) GetActiveSession(c *fiber.Ctx) error {
 		`SELECT id, user_id, trip_id, start_time, start_lat, start_lon, 
 		        total_distance, is_live, viewer_count
 		 FROM tracking_sessions
-		 WHERE user_id = @userId AND is_live = 1`,
-		sql.Named("userId", userID),
+		 WHERE user_id = $1 AND is_live = TRUE`,
+		userID,
 	).Scan(&session.ID, &session.UserID, &session.TripID, &session.StartTime,
 		&session.StartLat, &session.StartLon, &session.TotalDistance,
 		&session.IsLive, &session.ViewerCount)
@@ -84,12 +84,12 @@ func (s *TrackingService) StartTracking(c *fiber.Ctx) error {
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO tracking_sessions (user_id, trip_id, start_lat, start_lon, is_live, start_time)
-		 OUTPUT CAST(INSERTED.id AS VARCHAR(36))
-		 VALUES (@userId, @tripId, @lat, @lon, 1, GETDATE())`,
-		sql.Named("userId", input.UserID),
-		sql.Named("tripId", input.TripID),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
+		 VALUES ($1, $2, $3, $4, TRUE, now())
+		 RETURNING id::text`,
+		input.UserID,
+		input.TripID,
+		input.Latitude,
+		input.Longitude,
 	).Scan(&id)
 
 	if err != nil {
@@ -98,11 +98,11 @@ func (s *TrackingService) StartTracking(c *fiber.Ctx) error {
 
 	_, err = s.db.ExecContext(context.Background(),
 		`INSERT INTO live_tracking (user_id, trip_id, latitude, longitude, timestamp, is_active)
-		 VALUES (@userId, @tripId, @lat, @lon, GETDATE(), 1)`,
-		sql.Named("userId", input.UserID),
-		sql.Named("tripId", input.TripID),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
+		 VALUES ($1, $2, $3, $4, now(), 1)`,
+		input.UserID,
+		input.TripID,
+		input.Latitude,
+		input.Longitude,
 	)
 
 	return c.Status(201).JSON(fiber.Map{"id": id, "success": true})
@@ -119,6 +119,7 @@ func (s *TrackingService) StopTracking(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(Error("Invalid request"))
 	}
+	input.UserID = middleware.UserID(c)
 
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
@@ -127,18 +128,18 @@ func (s *TrackingService) StopTracking(c *fiber.Ctx) error {
 
 	_, err = tx.ExecContext(context.Background(),
 		`UPDATE tracking_sessions SET 
-		 is_live = 0, end_time = GETDATE(),
-		 end_lat = @lat, end_lon = @lon
-		 WHERE user_id = @userId AND is_live = 1`,
-		sql.Named("userId", input.UserID),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
+		 is_live = FALSE, end_time = now(),
+		 end_lat = $1, end_lon = $2
+		 WHERE user_id = $3 AND is_live = TRUE`,
+		input.Latitude,
+		input.Longitude,
+		input.UserID,
 	)
 
 	_, err = tx.ExecContext(context.Background(),
-		`UPDATE live_tracking SET is_active = 0
-		 WHERE user_id = @userId`,
-		sql.Named("userId", input.UserID),
+		`UPDATE live_tracking SET is_active = FALSE
+		 WHERE user_id = $1`,
+		input.UserID,
 	)
 
 	if err != nil {
@@ -168,16 +169,16 @@ func (s *TrackingService) UpdateLocation(c *fiber.Ctx) error {
 
 	_, err := s.db.ExecContext(context.Background(),
 		`UPDATE live_tracking SET 
-		 latitude = @lat, longitude = @lon,
-		 speed = @speed, heading = @heading, altitude = @alt,
-		 timestamp = GETDATE()
-		 WHERE user_id = @userId`,
-		sql.Named("userId", input.UserID),
-		sql.Named("lat", input.Latitude),
-		sql.Named("lon", input.Longitude),
-		sql.Named("speed", input.Speed),
-		sql.Named("heading", input.Heading),
-		sql.Named("alt", input.Altitude),
+		 latitude = $1, longitude = $2,
+		 speed = $3, heading = $4, altitude = $5,
+		 timestamp = now()
+		 WHERE user_id = $6`,
+		input.Latitude,
+		input.Longitude,
+		input.Speed,
+		input.Heading,
+		input.Altitude,
+		input.UserID,
 	)
 
 	if err != nil {
@@ -215,8 +216,8 @@ func (s *TrackingService) FollowUser(c *fiber.Ctx) error {
 
 	err := s.db.QueryRowContext(context.Background(),
 		`SELECT user_id, trip_id, latitude, longitude, speed, heading, timestamp, is_active
-		 FROM live_tracking WHERE user_id = @userId`,
-		sql.Named("userId", userID),
+		 FROM live_tracking WHERE user_id = $1`,
+		userID,
 	).Scan(&tracking.UserID, &tracking.TripID, &tracking.Latitude,
 		&tracking.Longitude, &tracking.Speed, &tracking.Heading,
 		&tracking.Timestamp, &tracking.IsActive)
@@ -242,7 +243,7 @@ func (s *TrackingService) FollowUser(c *fiber.Ctx) error {
 func (s *TrackingService) GetFollowers(c *fiber.Ctx) error {
 	rows, err := s.db.QueryContext(context.Background(),
 		`SELECT CAST(user_id AS VARCHAR(36)), CAST(trip_id AS VARCHAR(36)), latitude, longitude, speed, heading, timestamp
-		 FROM live_tracking WHERE is_active = 1`,
+		 FROM live_tracking WHERE is_active = TRUE`,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
