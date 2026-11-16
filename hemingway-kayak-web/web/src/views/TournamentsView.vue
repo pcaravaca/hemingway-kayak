@@ -1,7 +1,7 @@
 <template>
   <div class="tournaments-view">
     <div class="tournaments-header">
-      <h1 class="hemingway-title">Tournaments</h1>
+      <h1 class="hemingway-title">Torneos</h1>
       <router-link to="/tournaments/create" class="hemingway-btn hemingway-btn-primary">
         Create Tournament
       </router-link>
@@ -18,10 +18,10 @@
       </button>
     </div>
 
-    <div v-if="loading" class="loading">Loading tournaments...</div>
+    <div v-if="loading" class="loading">Cargando torneos...</div>
 
     <div v-else-if="filteredTournaments.length === 0" class="no-tournaments">
-      <p class="text-muted">No tournaments found</p>
+      <p class="text-muted">No hay torneos</p>
     </div>
 
     <div v-else class="tournaments-grid">
@@ -40,15 +40,15 @@
 
         <div class="tournament-info">
           <div class="info-row">
-            <span class="info-label">Type:</span>
+            <span class="info-label">Tipo:</span>
             <span class="info-value">{{ tournament.type }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Starts:</span>
+            <span class="info-label">Empieza:</span>
             <span class="info-value">{{ formatDate(tournament.startTime) }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Participants:</span>
+            <span class="info-label">Participantes:</span>
             <span class="info-value">{{ tournament.participantsCount || 0 }}</span>
           </div>
         </div>

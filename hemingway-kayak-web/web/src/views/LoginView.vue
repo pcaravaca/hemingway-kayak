@@ -2,31 +2,31 @@
   <div class="login-view">
     <div class="login-card hemingway-card">
       <div class="login-header">
-        <h1 class="hemingway-title">Welcome Back</h1>
-        <p class="login-subtitle">Sign in to continue your adventures</p>
+        <h1 class="hemmingway-title">Bienvenido de nuevo</h1>
+        <p class="login-subtitle">Entrá para seguir tus salidas</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="email" class="form-label">Email</label>
+          <label for="email" class="form-label">Correo</label>
           <input
             id="email"
             v-model="email"
             type="email"
-            class="hemingway-input"
-            placeholder="your@email.com"
+            class="hemmingway-input"
+            placeholder="tu@correo.com"
             required
           />
         </div>
 
         <div class="form-group">
-          <label for="password" class="form-label">Password</label>
+          <label for="password" class="form-label">Contraseña</label>
           <input
             id="password"
             v-model="password"
             type="password"
-            class="hemingway-input"
-            placeholder="Your password"
+            class="hemmingway-input"
+            placeholder="Tu contraseña"
             required
           />
         </div>
@@ -37,17 +37,17 @@
 
         <button
           type="submit"
-          class="hemingway-btn hemingway-btn-primary hemingway-btn-full"
+          class="hemmingway-btn hemmingway-btn-primary hemmingway-btn-full"
           :disabled="loading"
         >
-          {{ loading ? 'Signing in...' : 'Sign In' }}
+          {{ loading ? 'Entrando...' : 'Entrar' }}
         </button>
       </form>
 
       <div class="login-footer">
         <p class="text-muted">
-          Don't have an account?
-          <router-link to="/register" class="link">Create one</router-link>
+          ¿No tenés cuenta?
+          <router-link to="/register" class="link">Creala</router-link>
         </p>
       </div>
     </div>

@@ -1,25 +1,25 @@
 <template>
   <div class="history-view">
     <div class="history-header">
-      <h1 class="hemingway-title">Trip History</h1>
+      <h1 class="hemingway-title">Historial de salidas</h1>
       <div class="header-actions">
         <select v-model="filterType" class="hemingway-input filter-select">
-          <option value="ALL">All Types</option>
-          <option value="FISHING">Fishing</option>
-          <option value="CAMPING">Camping</option>
-          <option value="TOUR">Tour</option>
-          <option value="RACING">Racing</option>
+          <option value="ALL">Todos los tipos</option>
+          <option value="FISHING">Pesca</option>
+          <option value="CAMPING">Campamento</option>
+          <option value="TOUR">Recorrido</option>
+          <option value="RACING">Carrera</option>
         </select>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Loading trips...</div>
+    <div v-if="loading" class="loading">Cargando salidas...</div>
 
     <div v-else-if="filteredTrips.length === 0" class="no-trips">
       <div class="empty-state">
         <div class="empty-icon">🚣</div>
-        <h3>No trips yet</h3>
-        <p class="text-muted">Start your first adventure from the Android app</p>
+        <h3>Todavía no hay salidas</h3>
+        <p class="text-muted">Empezá tu primera salida desde la app Android</p>
       </div>
     </div>
 

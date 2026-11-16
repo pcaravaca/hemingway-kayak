@@ -1,16 +1,16 @@
 <template>
   <div class="profile-view">
     <div class="profile-header">
-      <h1 class="hemingway-title">Profile</h1>
+      <h1 class="hemingway-title">Perfil</h1>
     </div>
 
-    <div v-if="loading" class="loading">Loading profile...</div>
+    <div v-if="loading" class="loading">Cargando perfil...</div>
 
     <div v-else-if="!isAuthenticated" class="not-authenticated">
       <div class="empty-state">
         <div class="empty-icon">🔐</div>
-        <h3>Sign in required</h3>
-        <p class="text-muted">Please sign in to view your profile</p>
+        <h3>Tenés que entrar</h3>
+        <p class="text-muted">Iniciá sesión para ver tu perfil</p>
         <router-link to="/login" class="hemingway-btn hemingway-btn-primary">
           Sign In
         </router-link>
@@ -46,12 +46,12 @@
         </div>
 
         <div class="profile-settings">
-          <h3 class="settings-title">Settings</h3>
+          <h3 class="settings-title">Configuración</h3>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Live Tracking</span>
-              <span class="setting-desc text-muted">Share your location with others</span>
+              <span class="setting-label">Tracking en vivo</span>
+              <span class="setting-desc text-muted">Compartí tu ubicación con otros</span>
             </div>
             <label class="toggle">
               <input type="checkbox" v-model="trackingEnabled" @change="updateTrackingSetting" />
@@ -71,10 +71,10 @@
       </div>
 
       <div class="kayaks-section">
-        <h2 class="section-title">My Kayaks</h2>
+        <h2 class="section-title">Mis kayaks</h2>
 
         <div v-if="kayaks.length === 0" class="no-kayaks">
-          <p class="text-muted">No kayaks added yet</p>
+          <p class="text-muted">Todavía no hay kayaks</p>
         </div>
 
         <div v-else class="kayaks-grid">

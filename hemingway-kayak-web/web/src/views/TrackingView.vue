@@ -1,13 +1,13 @@
 <template>
   <div class="tracking-view">
     <div class="tracking-header">
-      <h1 class="hemingway-title">Live Tracking</h1>
+      <h1 class="hemingway-title">Tracking en vivo</h1>
       <div class="tracking-controls">
         <button class="hemingway-btn hemingway-btn-primary" @click="connect" :disabled="wsConnected">
-          {{ wsConnected ? 'Connected' : 'Connect' }}
+          {{ wsConnected ? 'Conectado' : 'Conectar' }}
         </button>
         <button class="hemingway-btn hemingway-btn-secondary" @click="disconnect" :disabled="!wsConnected">
-          Disconnect
+          Desconectar
         </button>
       </div>
     </div>
@@ -18,9 +18,9 @@
       </div>
 
       <div class="trackers-panel">
-        <h3 class="panel-title">Active Kayakers</h3>
+        <h3 class="panel-title">Kayakers activos</h3>
         <div v-if="trackers.length === 0" class="no-trackers">
-          <p class="text-muted">No kayakers sharing their location</p>
+          <p class="text-muted">Nadie está compartiendo su ubicación</p>
         </div>
         <div v-else class="trackers-list">
           <div
@@ -31,7 +31,7 @@
           >
             <div class="tracker-header">
               <span class="tracker-name">{{ tracker.displayName || tracker.username || 'Unknown' }}</span>
-              <span class="hemingway-badge hemingway-badge-success">LIVE</span>
+              <span class="hemingway-badge hemingway-badge-success">EN VIVO</span>
             </div>
             <div class="tracker-location">
               {{ formatLocation(tracker.latitude, tracker.longitude) }}
@@ -79,7 +79,7 @@ onUnmounted(() => {
 function initMap() {
   if (!mapContainer.value) return
 
-  map = L.map(mapContainer.value).setView([25.7617, -80.1918], 10)
+  map = L.map(mapContainer.value).setView([9.9382, -84.8371], 11)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
