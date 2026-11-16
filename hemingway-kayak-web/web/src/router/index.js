@@ -55,6 +55,11 @@ const routes = [
     component: () => import('@/views/TournamentCreateView.vue')
   },
   {
+    path: '/descargar',
+    name: 'Download',
+    component: () => import('@/views/DownloadView.vue')
+  },
+  {
     path: '/trips/:id',
     name: 'TripDetail',
     component: () => import('@/views/TripDetailView.vue')

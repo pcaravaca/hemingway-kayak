@@ -14,6 +14,7 @@
         <router-link to="/history">History</router-link>
         <router-link v-if="isAuthenticated" to="/profile">Profile</router-link>
         <router-link v-else to="/login">Login</router-link>
+        <router-link to="/descargar">App</router-link>
       </div>
     </nav>
     <main class="main-content">
