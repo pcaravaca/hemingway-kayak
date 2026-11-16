@@ -34,8 +34,8 @@ export const useAuthStore = defineStore('auth', () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       return { success: true }
     } catch (e) {
-      error.value = e.response?.data?.error || e.response?.data?.message || 'Login failed'
-      return { success: false }
+      error.value = e.response?.data?.error || e.response?.data?.message || 'No pudimos ingresar'
+      return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
@@ -46,10 +46,10 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       await axios.post('/api/v1/auth/register', userData)
-      return { success: true, message: 'Account created successfully' }
+      return { success: true, message: 'Cuenta creada. Ahora podés entrar.' }
     } catch (e) {
-      error.value = e.response?.data?.error || e.response?.data?.message || 'Registration failed'
-      return { success: false }
+      error.value = e.response?.data?.error || e.response?.data?.message || 'No pudimos crear la cuenta'
+      return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
@@ -59,7 +59,9 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     error.value = null
     try {
-      await axios.post('/api/v1/users/me/update', userData)
+      const id = user.value?.id
+      if (!id) throw new Error('Not authenticated')
+      await axios.put(`/api/v1/users/${id}`, userData)
       await fetchUser()
       return { success: true }
     } catch (e) {

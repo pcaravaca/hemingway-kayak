@@ -71,12 +71,14 @@ async function handleLogin() {
   loading.value = true
   error.value = null
 
-  const success = await authStore.login(email.value, password.value)
+  // authStore.login() devuelve { success, error }: sin el .success este if
+  // era siempre verdadero y el login fallido también redirigía al home.
+  const result = await authStore.login(email.value, password.value)
 
-  if (success) {
+  if (result.success) {
     router.push('/')
   } else {
-    error.value = authStore.error || 'Login failed'
+    error.value = result.error || authStore.error || 'No pudimos ingresar'
   }
 
   loading.value = false
