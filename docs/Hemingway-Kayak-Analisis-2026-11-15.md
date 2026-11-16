@@ -420,8 +420,14 @@ Commit local `68bd291` (no pusheado). **17 tests PASS**, `go build ./...` y `go 
 - `./gradlew :app:testDebugUnitTest` → **26 tests, 0 fallos** (FishingRecommendation 4, FishingSpot 2, Resource 4, WeatherData 2, EmergencyNotifier 9, MapUtils 5).
 - Cableado verificado en fuente, no solo compila: `activity_main.xml` aloja `NavHostFragment` + `nav_graph`; `HomeFragment` cablea los 4 botones a las acciones de navegación; `DataModule` provee `FishingSpotDao`.
 
-**Advertencia abierta:** AGP 8.2.0 está probado hasta `compileSdk 34`; el build funciona con 36 pero advierte. Dos caminos: subir AGP a 8.9+ (implica Gradle 8.11+ en el wrapper) o añadir `android.suppressUnsupportedCompileSdk=36`.
+**Lint (2026-11-15):** `lintDebug` arrancó con **5 errores**; corregidos y en 0.
+- El manifiesto declaraba `<service FishingConditionsService>`, pero la clase no extiende `Service`: era un helper de WorkManager. Se quitó el `<service>` (traía dos de los errores).
+- `BootReceiver` llamaba `startForegroundService` (API 26 con minSdk 24) → ahora invoca `FishingConditionsService(ctx).start()`, que programa el trabajo periódico con WorkManager.
+- `SEND_SMS` implicaba hardware telephony no declarado → `<uses-feature android:name="android.hardware.telephony" required="false" />`.
+- Quedan **137 warnings** (86 `UnusedResources`, 20 `GradleDependency`, 13 `SetTextI18n`, 4 `Overdraw`, resto menores). No bloquean.
 
-**Alcance abierto:** `PlacesManager`, `SonarManager`, `EmergencyNotifier` y `BootReceiver` siguen siendo stubs (compilan, no aportan). Decidir implementarlos o recortarlos del alcance.
+**Decisión AGP/compileSdk (2026-11-15):** se **conserva AGP 8.2.0 + Gradle 8.2 + Kotlin 1.8.0**. Subir AGP a 8.9 exigiría Gradle 8.11, y KGP 1.8.0 no es compatible con ese Gradle → migración completa de toolchain (AGP + Gradle + Kotlin) sobre un build hoy verde. El warning es informativo y no bloquea; se deja documentado como tarea propia.
+
+**Alcance:** `PlacesManager`, `SonarManager` y `EmergencyNotifier` se **recortan del alcance de F4** (compilan, no están referenciados; no aportan). `BootReceiver` deja de ser stub: ahora sí programa el chequeo periódico.
 
 **Seguimiento:** GT Kanban personal — F3 → `✅ Personal Done`, F4 → `▶️ Personal In Progress`. Honcho actualizado.
