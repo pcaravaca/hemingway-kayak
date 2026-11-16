@@ -18,8 +18,8 @@ class BootReceiver : BroadcastReceiver() {
             Log.d(TAG, "Device booted, starting services")
 
             context?.let { ctx ->
-                val serviceIntent = Intent(ctx, FishingConditionsService::class.java)
-                ctx.startForegroundService(serviceIntent)
+                // WorkManager so periodic checks survive reboots; no hay foreground service.
+                FishingConditionsService(ctx).start()
             }
         }
     }

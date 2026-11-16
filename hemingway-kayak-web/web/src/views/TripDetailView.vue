@@ -8,10 +8,11 @@
 </template>
 <script setup>
 import { ref, onMounted } from 'vue'
-const route = useRoute()
+
 const details = ref(null)
+
 onMounted(async () => {
-  // fetch details from API
+  // TODO: fetch details from API using route.params.id
   details.value = { title: 'Ejemplo de Viaje', description: 'Cargando...' }
 })
 </script>
