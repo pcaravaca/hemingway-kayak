@@ -76,8 +76,13 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  // Hay token guardado pero el usuario aún no se cargó (recarga de página):
+  // lo resuelve antes de decidir, si no la sesión no sobrevivía al F5.
+  if (auth.token && !auth.user) {
+    await auth.fetchUser()
+  }
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
