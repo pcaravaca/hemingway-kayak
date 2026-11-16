@@ -92,12 +92,12 @@
 }
 
 .hemingway-text {
-  font-size: var(--hemingham-font-size-base);
+  font-size: var(--hemingway-font-size-base);
   color: var(--hemingway-text-primary);
 }
 
 .hemingway-text-muted {
-  font-size: var(--hemingham-font-size-sm);
+  font-size: var(--hemingway-font-size-sm);
   color: var(--hemingway-text-muted);
 }
 
@@ -109,12 +109,12 @@
   gap: var(--hemingway-space-sm);
   padding: var(--hemingway-space-md) var(--hemingway-space-lg);
   font-family: var(--hemingway-font-family);
-  font-size: var(--hemingham-font-size-base);
+  font-size: var(--hemingway-font-size-base);
   font-weight: 600;
   border: none;
   border-radius: var(--hemingway-radius-lg);
   cursor: pointer;
-  transition: all var(--hemmingway-transition-normal);
+  transition: all var(--hemingway-transition-normal);
 }
 
 .hemingway-btn-primary {

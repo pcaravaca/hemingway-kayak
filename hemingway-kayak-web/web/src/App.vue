@@ -31,8 +31,6 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 </script>
 
 <style>
-@import './src/assets/hemingway.css';
-
 .navbar {
   display: flex;
   justify-content: space-between;

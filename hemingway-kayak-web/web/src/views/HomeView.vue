@@ -30,7 +30,7 @@
       <div class="trackers-list">
         <div v-for="tracker in activeTrackers" :key="tracker.userId" class="tracker-item hemingway-card">
           <div class="tracker-info">
-            <span class="tracker-name">{{ tracker.displayName }}</span>
+            <span class="tracker-name">{{ trackerName(tracker) }}</span>
             <span class="tracker-status hemingway-badge hemingway-badge-success">LIVE</span>
           </div>
           <div class="tracker-location">
@@ -50,14 +50,20 @@ const activeTrackers = ref([])
 
 onMounted(async () => {
   try {
+    // El backend ya filtra is_active = 1; la respuesta no trae `isActive`.
     const response = await axios.get('/api/v1/tracking/followers')
-    activeTrackers.value = response.data.filter(t => t.isActive)
+    activeTrackers.value = response.data
   } catch (error) {
     console.error('Failed to load trackers:', error)
   }
 })
 
+function trackerName(tracker) {
+  return tracker.displayName || tracker.username || tracker.userId || 'Kayaker'
+}
+
 function formatLocation(tracker) {
+  if (tracker.latitude == null || tracker.longitude == null) return 'Unknown'
   return `${tracker.latitude.toFixed(4)}, ${tracker.longitude.toFixed(4)}`
 }
 </script>

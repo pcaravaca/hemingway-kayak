@@ -383,3 +383,45 @@ Commit local `68bd291` (no pusheado). **17 tests PASS**, `go build ./...` y `go 
 **Bloqueante (no verificable aquí):** `10.10.1.21:1433` no es alcanzable desde WSL (`connect: no route to host`). El backend compila y arranca, pero **no se pudo probar contra la base real**. Tampoco hay Redis local (el código lo tolera con nil).
 
 **Nota para F3:** `web/src/stores/auth.js` aún espera `token` en `register` (el backend no lo emite), mapea errores con `data.message` (el backend usa `error`) y su `logout()` local no llama al backend.
+
+---
+
+## 14. Ejecución F3 (2026-11-15) — hecho y verificado
+
+**Auth y navegación**
+- `web/src/router/index.js`: 12 rutas con imports dinámicos + guard `beforeEach` (`requiresAuth` → `/login?redirect=…`; si ya autenticado, `/login` → `/`). Rutas nuevas: `/register`, `/profile/edit`, `/tournaments/create`, `/trips/:id`, catch-all 404.
+- `web/src/stores/auth.js`: `login`, `register`, `updateProfile`, `logout`, `fetchUser`; JWT en `localStorage` + header `Authorization` global; errores leídos del campo `error` del backend (con fallback a `message`).
+- Vistas nuevas: `RegisterView`, `ProfileEditView`, `TournamentCreateView`, `TripDetailView`, `NotFoundView`.
+
+**WebSocket**
+- `TournamentDetailView` ahora llama `connect()` en `onMounted` y `unsubscribeTournament(id)` en `onUnmounted` (antes solo suscribía sin conectar).
+
+**Contrato de campos (alineado con lo que el backend emite de verdad)**
+- `trip.distanceKm` → `trip.distance` (`HistoryView`).
+- `kayak.lengthCm` → `kayak.length` (`ProfileView`).
+- `tournament.participantsCount` ya coincidía; `type` ya coincidía (el backend renombra la **columna** DB, no el JSON).
+- Guards nulos en `toFixed` (`HomeView`, `TournamentDetailView`, `TrackingView`).
+- `HomeView` ya no filtra por `isActive` (campo inexistente; el backend filtra `is_active = 1`).
+
+**Verificado:** `npm run build` exit 0, 107 módulos.
+
+**Pendiente de F3:** `eslint` declarado pero no instalado (`npm run lint` falla) y el modelo de despliegue (¿el backend sirve `dist/` o hay reverse proxy?).
+
+---
+
+## 15. Ejecución F4 (2026-11-15) — build gate pasado
+
+**Precorrente local**
+- `local.properties` (gitignored) apuntaba a un SDK de Windows inexistente → corregido a `sdk.dir=/home/peter/android-sdk`.
+- AGP 8.2 auto-instaló `platforms;android-36` (licencias ya aceptadas); `build-tools;34.0.0` siguió sirviendo.
+
+**Verificado (evidencia real)**
+- `./gradlew :app:assembleDebug` → **BUILD SUCCESSFUL**; APK `app/build/outputs/apk/debug/app-debug.apk` de 9,6 MB, `com.hemingway.kayak`, `minSdk 24`, `targetSdk 36`, `compileSdk 36`.
+- `./gradlew :app:testDebugUnitTest` → **26 tests, 0 fallos** (FishingRecommendation 4, FishingSpot 2, Resource 4, WeatherData 2, EmergencyNotifier 9, MapUtils 5).
+- Cableado verificado en fuente, no solo compila: `activity_main.xml` aloja `NavHostFragment` + `nav_graph`; `HomeFragment` cablea los 4 botones a las acciones de navegación; `DataModule` provee `FishingSpotDao`.
+
+**Advertencia abierta:** AGP 8.2.0 está probado hasta `compileSdk 34`; el build funciona con 36 pero advierte. Dos caminos: subir AGP a 8.9+ (implica Gradle 8.11+ en el wrapper) o añadir `android.suppressUnsupportedCompileSdk=36`.
+
+**Alcance abierto:** `PlacesManager`, `SonarManager`, `EmergencyNotifier` y `BootReceiver` siguen siendo stubs (compilan, no aportan). Decidir implementarlos o recortarlos del alcance.
+
+**Seguimiento:** GT Kanban personal — F3 → `✅ Personal Done`, F4 → `▶️ Personal In Progress`. Honcho actualizado.

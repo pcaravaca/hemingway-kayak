@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   {
@@ -29,18 +30,56 @@ const routes = [
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('@/views/ProfileView.vue')
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile/edit',
+    name: 'ProfileEdit',
+    component: () => import('@/views/ProfileEditView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/LoginView.vue')
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterView.vue')
+  },
+  {
+    path: '/tournaments/create',
+    name: 'TournamentCreate',
+    component: () => import('@/views/TournamentCreateView.vue')
+  },
+  {
+    path: '/trips/:id',
+    name: 'TripDetail',
+    component: () => import('@/views/TripDetailView.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFoundView.vue')
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to) => {
+  const auth = useAuthStore()
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  if (to.path === '/login' && auth.isAuthenticated) {
+    return { path: '/' }
+  }
+  return true
 })
 
 export default router

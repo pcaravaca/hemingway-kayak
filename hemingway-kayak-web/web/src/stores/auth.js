@@ -1,15 +1,27 @@
-import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
 import axios from 'axios'
+
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
+  const isAuthenticated = computed(() => !!user.value)
   const token = ref(localStorage.getItem('token') || null)
   const loading = ref(false)
   const error = ref(null)
 
-  const isAuthenticated = computed(() => !!token.value)
-  const userDisplayName = computed(() => user.value?.displayName || user.value?.username || 'Guest')
+  axios.defaults.headers.common['Authorization'] = token.value ? `Bearer ${token.value}` : ''
+
+  async function fetchUser() {
+    if (!token.value) return
+    try {
+      const response = await axios.get('/api/v1/users/me')
+      user.value = response.data
+    } catch (e) {
+      logout()
+    }
+  }
 
   async function login(email, password) {
     loading.value = true
@@ -20,10 +32,10 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       localStorage.setItem('token', token.value)
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-      return true
+      return { success: true }
     } catch (e) {
-      error.value = e.response?.data?.message || 'Login failed'
-      return false
+      error.value = e.response?.data?.error || e.response?.data?.message || 'Login failed'
+      return { success: false }
     } finally {
       loading.value = false
     }
@@ -33,41 +45,41 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await axios.post('/api/v1/auth/register', userData)
-      token.value = response.data.token
-      user.value = response.data.user
-      localStorage.setItem('token', token.value)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-      return true
+      await axios.post('/api/v1/auth/register', userData)
+      return { success: true, message: 'Account created successfully' }
     } catch (e) {
-      error.value = e.response?.data?.message || 'Registration failed'
-      return false
+      error.value = e.response?.data?.error || e.response?.data?.message || 'Registration failed'
+      return { success: false }
     } finally {
       loading.value = false
     }
   }
 
-  async function fetchUser() {
-    if (!token.value) return
+  async function updateProfile(userData) {
+    loading.value = true
+    error.value = null
     try {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-      const response = await axios.get('/api/v1/users/me')
-      user.value = response.data
+      await axios.post('/api/v1/users/me/update', userData)
+      await fetchUser()
+      return { success: true }
     } catch (e) {
-      logout()
+      error.value = e.response?.data?.error || e.response?.data?.message || 'Failed to update profile'
+      return { success: false }
+    } finally {
+      loading.value = false
     }
   }
 
-  function logout() {
-    user.value = null
-    token.value = null
-    localStorage.removeItem('token')
-    delete axios.defaults.headers.common['Authorization']
+  async function logout() {
+    try {
+      await axios.post('/api/v1/auth/logout').catch(() => {})
+    } finally {
+      user.value = null
+      token.value = null
+      localStorage.removeItem('token')
+      delete axios.defaults.headers.common['Authorization']
+    }
   }
 
-  if (token.value) {
-    fetchUser()
-  }
-
-  return { user, token, loading, error, isAuthenticated, userDisplayName, login, register, logout, fetchUser }
+  return { user, isAuthenticated, token, loading, error, login, register, updateProfile, logout, fetchUser }
 })

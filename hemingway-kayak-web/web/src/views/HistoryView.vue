@@ -49,7 +49,7 @@
           </div>
           <div class="detail-item">
             <span class="detail-icon">📏</span>
-            <span>{{ trip.distanceKm ? `${trip.distanceKm.toFixed(1)} km` : 'N/A' }}</span>
+            <span>{{ trip.distance ? `${trip.distance.toFixed(1)} km` : 'N/A' }}</span>
           </div>
         </div>
 

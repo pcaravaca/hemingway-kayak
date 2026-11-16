@@ -49,7 +49,7 @@
                 </div>
               </div>
               <div class="participant-score">
-                {{ participant.score.toFixed(1) }}
+                {{ participant.score != null ? participant.score.toFixed(1) : '0.0' }}
               </div>
             </div>
           </div>
@@ -77,14 +77,16 @@ const mapContainer = ref(null)
 let map = null
 const participantMarkers = {}
 
-const { subscribeTournament, unsubscribeTournament, tournamentUpdates } = useTrackingWebSocket()
+const { connect, subscribeTournament, unsubscribeTournament, tournamentUpdates } = useTrackingWebSocket()
 
 onMounted(async () => {
   await fetchTournament()
   initMap()
+  connect()
 })
 
 onUnmounted(() => {
+  unsubscribeTournament(route.params.id)
   if (map) {
     map.remove()
     map = null

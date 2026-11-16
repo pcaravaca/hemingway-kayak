@@ -95,6 +95,8 @@ function updateMarkers(newTrackers) {
     if (!map) return
     const { userId, latitude, longitude, displayName } = tracker
 
+    if (latitude == null || longitude == null) return
+
     if (trackerMarkers[userId]) {
       trackerMarkers[userId].setLatLng([latitude, longitude])
     } else {

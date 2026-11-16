@@ -82,7 +82,7 @@
             <h4 class="kayak-name">{{ kayak.name }}</h4>
             <div class="kayak-details">
               <span>{{ kayak.type }}</span>
-              <span v-if="kayak.lengthCm">{{ kayak.lengthCm }}cm</span>
+              <span v-if="kayak.length">{{ kayak.length }}cm</span>
             </div>
           </div>
         </div>
