@@ -40,6 +40,8 @@ gradle-7.5/
 .env
 .env.*
 !.env.example
+# Sin secretos: fija la base de la API para el build de producción.
+!.env.production
 
 # ---- OS / editors ----
 .DS_Store
