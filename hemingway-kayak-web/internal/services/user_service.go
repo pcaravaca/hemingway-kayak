@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"log"
 	"strings"
 	"time"
 
@@ -110,6 +111,8 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 	// autocompletado) el SELECT no encuentra la fila y el usuario recibe un
 	// "credenciales inválidas" que no le dice nada.
 	input.Email = strings.ToLower(strings.TrimSpace(input.Email))
+	// Los teclados móviles y el copy-pega suelen colar un espacio al final.
+	input.Password = strings.TrimSpace(input.Password)
 
 	var userID, passwordHash string
 	err := s.db.QueryRowContext(context.Background(),
@@ -118,6 +121,7 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 	).Scan(&userID, &passwordHash)
 
 	if err == sql.ErrNoRows {
+		log.Printf("login fallido: correo no registrado %q (ip %s)", input.Email, c.IP())
 		return c.Status(401).JSON(Error("Ese correo no está registrado"))
 	}
 	if err != nil {
@@ -125,6 +129,7 @@ func (s *UserService) Login(c *fiber.Ctx) error {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(input.Password)); err != nil {
+		log.Printf("login fallido: clave incorrecta para %q (ip %s, len=%d)", input.Email, c.IP(), len(input.Password))
 		return c.Status(401).JSON(Error("Contraseña incorrecta"))
 	}
 
