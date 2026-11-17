@@ -7,7 +7,10 @@ export function useTrackingWebSocket() {
   let ws = null
 
   function connect() {
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws/tracking'
+    // En produccion el WS queda en el mismo origin que la SPA (nginx hace proxy);
+    // VITE_WS_URL sigue permitiendo fijarlo a mano.
+    const wsUrl = import.meta.env.VITE_WS_URL
+      || `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/tracking`
     ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
