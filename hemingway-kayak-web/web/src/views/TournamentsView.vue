@@ -2,8 +2,8 @@
   <div class="tournaments-view">
     <div class="tournaments-header">
       <h1 class="hemingway-title">Torneos</h1>
-      <router-link to="/tournaments/create" class="hemingway-btn hemingway-btn-primary">
-        Create Tournament
+      <router-link to="/tournaments/create" class="hemmingway-btn hemmingway-btn-primary">
+        Crear torneo
       </router-link>
     </div>
 

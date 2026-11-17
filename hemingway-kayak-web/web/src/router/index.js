@@ -58,7 +58,8 @@ const routes = [
   {
     path: '/tournaments/create',
     name: 'TournamentCreate',
-    component: () => import('@/views/TournamentCreateView.vue')
+    component: () => import('@/views/TournamentCreateView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/descargar',
