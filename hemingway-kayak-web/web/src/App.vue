@@ -7,6 +7,7 @@
       </router-link>
 
       <nav class="nav-links">
+        <router-link v-if="isAuthenticated" to="/dashboard">Panel</router-link>
         <router-link to="/tracking">Tracking</router-link>
         <router-link to="/tournaments">Torneos</router-link>
         <router-link to="/history">Historial</router-link>

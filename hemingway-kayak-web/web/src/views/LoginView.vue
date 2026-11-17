@@ -76,7 +76,7 @@ async function handleLogin() {
   const result = await authStore.login(email.value, password.value)
 
   if (result.success) {
-    router.push('/')
+    router.push('/dashboard')
   } else {
     error.value = result.error || authStore.error || 'No pudimos ingresar'
   }

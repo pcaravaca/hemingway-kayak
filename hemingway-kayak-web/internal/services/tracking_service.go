@@ -241,9 +241,15 @@ func (s *TrackingService) FollowUser(c *fiber.Ctx) error {
 }
 
 func (s *TrackingService) GetFollowers(c *fiber.Ctx) error {
+	// Se une con users para que el panel y el home muestren un nombre legible
+	// en vez del UUID del kayaker.
 	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT CAST(user_id AS VARCHAR(36)), CAST(trip_id AS VARCHAR(36)), latitude, longitude, speed, heading, timestamp
-		 FROM live_tracking WHERE is_active = TRUE`,
+		`SELECT CAST(lt.user_id AS VARCHAR(36)), CAST(lt.trip_id AS VARCHAR(36)),
+		        lt.latitude, lt.longitude, lt.speed, lt.heading, lt.timestamp,
+		        COALESCE(u.display_name, u.username, '')
+		 FROM live_tracking lt
+		 LEFT JOIN users u ON u.id = lt.user_id
+		 WHERE lt.is_active = TRUE`,
 	)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -255,14 +261,18 @@ func (s *TrackingService) GetFollowers(c *fiber.Ctx) error {
 		var userID, tripID sql.NullString
 		var lat, lon, speed, heading sql.NullFloat64
 		var timestamp sql.NullTime
+		var name sql.NullString
 
-		if err := rows.Scan(&userID, &tripID, &lat, &lon, &speed, &heading, &timestamp); err != nil {
+		if err := rows.Scan(&userID, &tripID, &lat, &lon, &speed, &heading, &timestamp, &name); err != nil {
 			continue
 		}
 
 		tracker := map[string]interface{}{}
 		if userID.Valid {
 			tracker["userId"] = userID.String
+		}
+		if name.Valid {
+			tracker["displayName"] = name.String
 		}
 		if lat.Valid {
 			tracker["latitude"] = lat.Float64

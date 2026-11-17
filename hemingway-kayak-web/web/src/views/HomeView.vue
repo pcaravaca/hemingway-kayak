@@ -9,7 +9,7 @@
           reviví cada salida. Hemingway Kayak deja el registro donde el celular no llega.
         </p>
         <div class="cta">
-          <router-link v-if="isAuthenticated" to="/tracking" class="btn-solid">Empezar una salida</router-link>
+          <router-link v-if="isAuthenticated" to="/dashboard" class="btn-solid">Ir a mi panel</router-link>
           <router-link v-else to="/register" class="btn-solid">Empezar una salida</router-link>
           <router-link to="/tournaments" class="btn-outline">Ver torneos</router-link>
         </div>
