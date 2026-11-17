@@ -13,13 +13,33 @@ import (
 	"hemingway-kayak-web/internal/middleware"
 )
 
+// wsBroadcaster es lo único que TrackingService necesita del hub de WebSocket.
+// Se define acá para no acoplar services con internal/ws.
+type wsBroadcaster interface {
+	BroadcastTo(room string, eventType string, data interface{})
+}
+
 type TrackingService struct {
 	db    *sql.DB
 	redis *redis.Client
+	hub   wsBroadcaster
 }
 
 func NewTrackingService(db *sql.DB, redis *redis.Client) *TrackingService {
 	return &TrackingService{db: db, redis: redis}
+}
+
+// SetBroadcaster engancha el hub de WebSocket. Sin esto, la posición en vivo se
+// guarda en la DB pero ningún browser se entera.
+func (s *TrackingService) SetBroadcaster(hub wsBroadcaster) {
+	s.hub = hub
+}
+
+// push transmite la posición a todos los clientes conectados.
+func (s *TrackingService) push(event string, payload fiber.Map) {
+	if s.hub != nil {
+		s.hub.BroadcastTo("", event, payload)
+	}
 }
 
 func (s *TrackingService) GetActiveSession(c *fiber.Ctx) error {
@@ -81,13 +101,20 @@ func (s *TrackingService) StartTracking(c *fiber.Ctx) error {
 	}
 	input.UserID = middleware.UserID(c)
 
+	// tripId es opcional: si viene vacío o null, se guarda NULL y no un '' que
+	// Postgres rechaza como UUID (eso devolvía un 500 sin mensaje).
+	var tripID sql.NullString
+	if input.TripID != "" {
+		tripID = sql.NullString{String: input.TripID, Valid: true}
+	}
+
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO tracking_sessions (user_id, trip_id, start_lat, start_lon, is_live, start_time)
 		 VALUES ($1, $2, $3, $4, TRUE, now())
 		 RETURNING id::text`,
 		input.UserID,
-		input.TripID,
+		tripID,
 		input.Latitude,
 		input.Longitude,
 	).Scan(&id)
@@ -98,12 +125,23 @@ func (s *TrackingService) StartTracking(c *fiber.Ctx) error {
 
 	_, err = s.db.ExecContext(context.Background(),
 		`INSERT INTO live_tracking (user_id, trip_id, latitude, longitude, timestamp, is_active)
-		 VALUES ($1, $2, $3, $4, now(), 1)`,
+		 VALUES ($1, $2, $3, $4, now(), 1)
+		 ON CONFLICT (user_id) DO UPDATE SET
+		   trip_id = EXCLUDED.trip_id,
+		   latitude = EXCLUDED.latitude,
+		   longitude = EXCLUDED.longitude,
+		   timestamp = now(),
+		   is_active = TRUE`,
 		input.UserID,
-		input.TripID,
+		tripID,
 		input.Latitude,
 		input.Longitude,
 	)
+
+	s.push("tracking", fiber.Map{
+		"userId": input.UserID, "latitude": input.Latitude,
+		"longitude": input.Longitude, "speed": 0, "heading": 0, "timestamp": time.Now(),
+	})
 
 	return c.Status(201).JSON(fiber.Map{"id": id, "success": true})
 }
@@ -148,6 +186,11 @@ func (s *TrackingService) StopTracking(c *fiber.Ctx) error {
 	}
 
 	tx.Commit()
+
+	s.push("tracking-stop", fiber.Map{
+		"userId": input.UserID, "timestamp": time.Now(),
+	})
+
 	return c.JSON(Success("Tracking stopped"))
 }
 
@@ -167,35 +210,48 @@ func (s *TrackingService) UpdateLocation(c *fiber.Ctx) error {
 	}
 	input.UserID = middleware.UserID(c)
 
+	// Upsert: antes era un UPDATE puro, así que el primer punto de una sesión
+	// (si no pasó por /tracking/start) no dejaba fila y el mapa nunca lo veía.
 	_, err := s.db.ExecContext(context.Background(),
-		`UPDATE live_tracking SET 
-		 latitude = $1, longitude = $2,
-		 speed = $3, heading = $4, altitude = $5,
-		 timestamp = now()
-		 WHERE user_id = $6`,
+		`INSERT INTO live_tracking
+		   (user_id, trip_id, latitude, longitude, speed, heading, altitude, timestamp, is_active)
+		 VALUES ($1, NULL, $2, $3, $4, $5, $6, now(), TRUE)
+		 ON CONFLICT (user_id) DO UPDATE SET
+		   latitude = EXCLUDED.latitude,
+		   longitude = EXCLUDED.longitude,
+		   speed = EXCLUDED.speed,
+		   heading = EXCLUDED.heading,
+		   altitude = EXCLUDED.altitude,
+		   timestamp = now(),
+		   is_active = TRUE`,
+		input.UserID,
 		input.Latitude,
 		input.Longitude,
 		input.Speed,
 		input.Heading,
 		input.Altitude,
-		input.UserID,
 	)
 
 	if err != nil {
 		return c.Status(500).JSON(Error("Failed to update"))
 	}
 
-	ctx := context.Background()
-	data, _ := json.Marshal(fiber.Map{
+	payload := fiber.Map{
 		"userId": input.UserID, "latitude": input.Latitude,
 		"longitude": input.Longitude, "speed": input.Speed,
 		"heading": input.Heading, "timestamp": time.Now(),
-	})
+	}
+
+	ctx := context.Background()
+	data, _ := json.Marshal(payload)
 	if s.redis != nil {
 		if err := s.redis.Publish(ctx, "tracking:live", data).Err(); err != nil {
 			log.Printf("Warning: failed to publish tracking update: %v", err)
 		}
 	}
+
+	// Es el que de verdad actualiza los marcadores del mapa en el browser.
+	s.push("tracking", payload)
 
 	return c.JSON(Success("Location updated"))
 }

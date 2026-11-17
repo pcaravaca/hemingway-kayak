@@ -43,10 +43,18 @@ export function useTrackingWebSocket() {
       case 'tracking':
         updateTracker(message.data)
         break
+      case 'tracking-stop':
+        removeTracker(message.data?.userId)
+        break
       case 'tournament':
         tournamentUpdates.value = message.data
         break
     }
+  }
+
+  function removeTracker(userId) {
+    if (!userId) return
+    trackers.value = trackers.value.filter(t => t.userId !== userId)
   }
 
   function updateTracker(data) {

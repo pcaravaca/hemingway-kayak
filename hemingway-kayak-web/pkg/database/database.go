@@ -202,7 +202,7 @@ func SeedData() error {
 		{
 			`INSERT INTO users (id, email, username, password_hash, display_name, bio, tracking_enabled)
 			 VALUES (gen_random_uuid(), 'marina@hemingway.com', 'marina_kayak', $1, 'Marina Rodriguez',
-			         'Campeona de kayak racing en Florida.', TRUE)`,
+			         'Campeona de kayak racing en Costa Rica.', TRUE)`,
 			[]interface{}{string(hash)},
 		},
 		{
@@ -277,43 +277,43 @@ func SeedData() error {
 		// ---------- Viajes ----------
 		{
 			`INSERT INTO trips (id, user_id, title, description, triptype, status, start_time, end_time, start_lat, start_lon, end_lat, end_lon, distance)
-			 SELECT gen_random_uuid(), id, 'Miami Everglades Expedition', 'Travesia por los canales del Everglades buscando snook.', 'FISHING', 'COMPLETED',
-			        '2026-03-15 06:00:00', '2026-03-15 14:30:00', 25.7617, -80.1918, 25.8900, -80.3600, 28.5
+			 SELECT gen_random_uuid(), id, 'Travesia al Golfo de Nicoya', 'Travesia por el golfo buscando snook.', 'FISHING', 'COMPLETED',
+			        '2026-03-15 06:00:00', '2026-03-15 14:30:00', 9.9382, -84.8371, 10.1200, -85.0200, 28.5
 			 FROM users WHERE email = 'peter@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO trips (id, user_id, title, description, triptype, status, start_time, end_time, start_lat, start_lon, distance)
-			 SELECT gen_random_uuid(), id, 'Keys Weekend Adventure', 'Fin de semana en los cayos con campamento.', 'CAMPING', 'PLANNED',
-			        '2026-03-28 05:00:00', '2026-03-30 18:00:00', 24.5554, -81.7800, 0
+			 SELECT gen_random_uuid(), id, 'Fin de semana en Isla Chira', 'Fin de semana en la isla con campamento.', 'CAMPING', 'PLANNED',
+			        '2026-03-28 05:00:00', '2026-03-30 18:00:00', 9.8456, -85.1736, 0
 			 FROM users WHERE email = 'peter@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO trips (id, user_id, title, description, triptype, status, start_time, end_time, start_lat, start_lon, end_lat, end_lon, distance)
-			 SELECT gen_random_uuid(), id, 'Biscayne Bay Morning', 'Sesion corta de pesca en la bahia.', 'FISHING', 'COMPLETED',
-			        '2026-03-20 06:30:00', '2026-03-20 11:00:00', 25.5100, -80.2000, 25.6500, -80.2500, 15.2
+			 SELECT gen_random_uuid(), id, 'Manana en Playa Hermosa', 'Sesion corta de pesca en la bahia de Hermosa.', 'FISHING', 'COMPLETED',
+			        '2026-03-20 06:30:00', '2026-03-20 11:00:00', 10.6517, -85.6610, 10.7200, -85.7500, 15.2
 			 FROM users WHERE email = 'marina@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO trips (id, user_id, title, description, triptype, status, start_time, end_time, start_lat, start_lon, end_lat, end_lon, distance)
-			 SELECT gen_random_uuid(), id, 'Crandon Park Sprint', 'Carrera de velocidad en el parque.', 'RACING', 'COMPLETED',
-			        '2026-03-22 08:00:00', '2026-03-22 10:00:00', 25.5100, -80.2000, 25.5300, -80.2200, 12.4
+			 SELECT gen_random_uuid(), id, 'Playa Hermosa Sprint', 'Carrera de velocidad en el parque.', 'RACING', 'COMPLETED',
+			        '2026-03-22 08:00:00', '2026-03-22 10:00:00', 10.6517, -85.6610, 10.6900, -85.7000, 12.4
 			 FROM users WHERE email = 'marina@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO trips (id, user_id, title, description, triptype, status, start_time, end_time, start_lat, start_lon, end_lat, end_lon, distance)
 			 SELECT gen_random_uuid(), id, 'Night Paddle Under Stars', 'Remada nocturna por la laguna.', 'TOURING', 'COMPLETED',
-			        '2026-04-02 20:00:00', '2026-04-02 23:30:00', 25.9500, -80.2800, 25.9700, -80.3000, 9.8
+			        '2026-04-02 20:00:00', '2026-04-02 23:30:00', 9.7125, -85.0056, 9.7800, -85.0600, 9.8
 			 FROM users WHERE email = 'lucia@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO trips (id, user_id, title, description, triptype, status, start_time, start_lat, start_lon)
-			 SELECT gen_random_uuid(), id, 'Live: Florida Bay Crossing', 'Travesia en vivo por Florida Bay.', 'FISHING', 'LIVE',
-			        '2026-11-16 07:00:00', 25.5250, -80.2050
+			 SELECT gen_random_uuid(), id, 'En vivo: Cruce por el Golfo', 'Travesia en vivo por el Golfo de Nicoya.', 'FISHING', 'LIVE',
+			        '2026-11-16 07:00:00', 10.6600, -85.6700
 			 FROM users WHERE email = 'peter@hemingway.com'`,
 			nil,
 		},
@@ -322,37 +322,37 @@ func SeedData() error {
 		{
 			`INSERT INTO trip_points (id, trip_id, latitude, longitude, altitude, speed, heading, timestamp)
 			 SELECT gen_random_uuid(), t.id,
-			        25.7617 + (g * 0.0120), -80.1918 + (g * 0.0090),
+			        9.9382 + (g * 0.0080), -84.8371 + (g * 0.0060),
 			        2 + (g % 5), 6 + (g % 4), (g * 45) % 360,
 			        t.start_time + (g * interval '8 minutes')
 			 FROM trips t CROSS JOIN generate_series(1, 12) g
-			 WHERE t.title = 'Miami Everglades Expedition'`,
+			 WHERE t.title = 'Travesia al Golfo de Nicoya'`,
 			nil,
 		},
 		{
 			`INSERT INTO trip_points (id, trip_id, latitude, longitude, altitude, speed, heading, timestamp)
 			 SELECT gen_random_uuid(), t.id,
-			        25.5100 + (g * 0.0130), -80.2000 + (g * 0.0045),
+			        10.6517 + (g * 0.0090), -85.6610 + (g * 0.0030),
 			        1 + (g % 3), 7 + (g % 3), (g * 30) % 360,
 			        t.start_time + (g * interval '4 minutes')
 			 FROM trips t CROSS JOIN generate_series(1, 12) g
-			 WHERE t.title = 'Biscayne Bay Morning'`,
+			 WHERE t.title = 'Manana en Playa Hermosa'`,
 			nil,
 		},
 		{
 			`INSERT INTO trip_points (id, trip_id, latitude, longitude, altitude, speed, heading, timestamp)
 			 SELECT gen_random_uuid(), t.id,
-			        25.5100 + (g * 0.0020), -80.2000 - (g * 0.0015),
+			        10.6517 + (g * 0.0015), -85.6610 - (g * 0.0010),
 			        1, 14 + (g % 6), (g * 15) % 360,
 			        t.start_time + (g * interval '1 minute')
 			 FROM trips t CROSS JOIN generate_series(1, 12) g
-			 WHERE t.title = 'Crandon Park Sprint'`,
+			 WHERE t.title = 'Playa Hermosa Sprint'`,
 			nil,
 		},
 		{
 			`INSERT INTO trip_points (id, trip_id, latitude, longitude, altitude, speed, heading, timestamp)
 			 SELECT gen_random_uuid(), t.id,
-			        25.9500 + (g * 0.0010), -80.2800 - (g * 0.0012),
+			        9.7125 + (g * 0.0008), -85.0056 - (g * 0.0009),
 			        1, 5 + (g % 3), (g * 20) % 360,
 			        t.start_time + (g * interval '18 minutes')
 			 FROM trips t CROSS JOIN generate_series(1, 12) g
@@ -362,30 +362,30 @@ func SeedData() error {
 		{
 			`INSERT INTO trip_points (id, trip_id, latitude, longitude, altitude, speed, heading, timestamp)
 			 SELECT gen_random_uuid(), t.id,
-			        25.5250, -80.2050, 1, 8.5, 90, t.start_time
-			 FROM trips t WHERE t.title = 'Live: Florida Bay Crossing'`,
+			        10.6600, -85.6700, 1, 8.5, 90, t.start_time
+			 FROM trips t WHERE t.title = 'En vivo: Cruce por el Golfo'`,
 			nil,
 		},
 
 		// ---------- Torneos ----------
 		{
 			`INSERT INTO tournaments (id, name, description, organizer_id, start_time, end_time, location_name, start_lat, start_lon, status, tournamenttype, max_participants)
-			 SELECT gen_random_uuid(), 'Spring Kingfish Championship 2026', 'El clasico campeonato de kingfish de la costa de Florida.', id,
-			        '2026-04-05 07:00:00', '2026-04-05 17:00:00', 'Miami Marina', 25.7617, -80.1918, 'PLANNED', 'FISHING', 50
+			 SELECT gen_random_uuid(), 'Campeonato Nacional de Kayak Fishing 2026', 'El clasico campeonato de kingfish de la costa del Golfo de Nicoya.', id,
+			        '2026-04-05 07:00:00', '2026-04-05 17:00:00', 'Marina de Herradura', 9.9382, -84.8371, 'PLANNED', 'FISHING', 50
 			 FROM users WHERE email = 'peter@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO tournaments (id, name, description, organizer_id, start_time, end_time, location_name, start_lat, start_lon, status, tournamenttype, max_participants)
-			 SELECT gen_random_uuid(), 'Kayak Racing League - Miami', 'Liga de carreras de kayak por equipos en Crandon Park.', id,
-			        '2026-03-22 08:00:00', '2026-03-22 14:00:00', 'Crandon Park', 25.5100, -80.2000, 'LIVE', 'RACING', 30
+			 SELECT gen_random_uuid(), 'Liga de Carreras del Golfo', 'Liga de carreras de kayak por equipos en Playa Hermosa.', id,
+			        '2026-12-05 08:00:00', '2026-12-05 14:00:00', 'Playa Hermosa', 10.6517, -85.6610, 'UPCOMING', 'RACING', 30
 			 FROM users WHERE email = 'marina@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO tournaments (id, name, description, organizer_id, start_time, end_time, location_name, start_lat, start_lon, status, tournamenttype, max_participants)
 			 SELECT gen_random_uuid(), 'Fall Tarpon Shootout', 'Torneo de otono enfocado en tarpon.', id,
-			        '2026-09-12 06:00:00', '2026-09-12 18:00:00', 'Biscayne Inlet', 25.5100, -80.2000, 'FINISHED', 'FISHING', 40
+			        '2026-09-12 06:00:00', '2026-09-12 18:00:00', 'Boca del Rio Tempisque', 10.6517, -85.6610, 'FINISHED', 'FISHING', 40
 			 FROM users WHERE email = 'lucia@hemingway.com'`,
 			nil,
 		},
@@ -393,37 +393,37 @@ func SeedData() error {
 		// ---------- Participantes ----------
 		{
 			`INSERT INTO tournament_participants (id, tournament_id, user_id, kayak_id, status, current_lat, current_lon, score, catches_count, last_update_time, joined_at)
-			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 25.5200, -80.2100, 85.5, 3, now(), '2026-03-20 09:00:00'
+			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 10.6550, -85.6650, 85.5, 3, now(), '2026-03-20 09:00:00'
 			 FROM tournaments t, users u, kayaks k
-			 WHERE t.name = 'Kayak Racing League - Miami' AND u.email = 'peter@hemingway.com' AND k.name = 'Explorer Pro'`,
+			 WHERE t.name = 'Liga de Carreras del Golfo' AND u.email = 'peter@hemingway.com' AND k.name = 'Explorer Pro'`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_participants (id, tournament_id, user_id, kayak_id, status, current_lat, current_lon, score, catches_count, last_update_time, joined_at)
-			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 25.5300, -80.2200, 72.0, 2, now(), '2026-03-20 09:05:00'
+			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 10.6900, -85.7000, 72.0, 2, now(), '2026-03-20 09:05:00'
 			 FROM tournaments t, users u, kayaks k
-			 WHERE t.name = 'Kayak Racing League - Miami' AND u.email = 'marina@hemingway.com' AND k.name = 'Sportster'`,
+			 WHERE t.name = 'Liga de Carreras del Golfo' AND u.email = 'marina@hemingway.com' AND k.name = 'Sportster'`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_participants (id, tournament_id, user_id, kayak_id, status, current_lat, current_lon, score, catches_count, last_update_time, joined_at)
-			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 25.5260, -80.2150, 64.5, 4, now(), '2026-03-20 09:10:00'
+			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 10.6720, -85.6800, 64.5, 4, now(), '2026-03-20 09:10:00'
 			 FROM tournaments t, users u, kayaks k
-			 WHERE t.name = 'Kayak Racing League - Miami' AND u.email = 'lucia@hemingway.com' AND k.name = 'Bay Stealth'`,
+			 WHERE t.name = 'Liga de Carreras del Golfo' AND u.email = 'lucia@hemingway.com' AND k.name = 'Bay Stealth'`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_participants (id, tournament_id, user_id, kayak_id, status, current_lat, current_lon, score, catches_count, last_update_time, joined_at)
-			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 25.5180, -80.2080, 55.0, 2, now(), '2026-03-20 09:15:00'
+			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 10.6480, -85.6580, 55.0, 2, now(), '2026-03-20 09:15:00'
 			 FROM tournaments t, users u, kayaks k
-			 WHERE t.name = 'Kayak Racing League - Miami' AND u.email = 'diego@hemingway.com' AND k.name = 'Pedal Duke'`,
+			 WHERE t.name = 'Liga de Carreras del Golfo' AND u.email = 'diego@hemingway.com' AND k.name = 'Pedal Duke'`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_participants (id, tournament_id, user_id, kayak_id, status, current_lat, current_lon, score, catches_count, last_update_time, joined_at)
-			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 25.5340, -80.2250, 41.0, 1, now(), '2026-03-20 09:20:00'
+			 SELECT gen_random_uuid(), t.id, u.id, k.id, 'active', 10.7010, -85.7050, 41.0, 1, now(), '2026-03-20 09:20:00'
 			 FROM tournaments t, users u, kayaks k
-			 WHERE t.name = 'Kayak Racing League - Miami' AND u.email = 'ana@hemingway.com' AND k.name = 'Family Tandem'`,
+			 WHERE t.name = 'Liga de Carreras del Golfo' AND u.email = 'ana@hemingway.com' AND k.name = 'Family Tandem'`,
 			nil,
 		},
 		{
@@ -444,56 +444,56 @@ func SeedData() error {
 		// ---------- Capturas ----------
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'King Mackerel', 12.4, 25.5205, -80.2105, NULL, TRUE, 'marina_kayak', '2026-03-22 09:30:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'King Mackerel', 12.4, 10.6555, -85.6655, NULL, TRUE, 'marina_kayak', '2026-03-22 09:30:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
-			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Kayak Racing League - Miami')`,
+			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Spanish Mackerel', 8.1, 25.5210, -80.2110, NULL, TRUE, 'marina_kayak', '2026-03-22 10:05:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Spanish Mackerel', 8.1, 10.6560, -85.6660, NULL, TRUE, 'marina_kayak', '2026-03-22 10:05:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
-			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Kayak Racing League - Miami')`,
+			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon', 42.0, 25.5305, -80.2205, NULL, FALSE, NULL, '2026-03-22 11:20:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon', 42.0, 10.6905, -85.7005, NULL, FALSE, NULL, '2026-03-22 11:20:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
-			 WHERE u.email = 'marina@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Kayak Racing League - Miami')`,
+			 WHERE u.email = 'marina@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Snapper', 5.6, 25.5265, -80.2155, NULL, TRUE, 'peter_kayak', '2026-03-22 11:40:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Snapper', 5.6, 10.6725, -85.6805, NULL, TRUE, 'peter_kayak', '2026-03-22 11:40:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
-			 WHERE u.email = 'lucia@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Kayak Racing League - Miami')`,
+			 WHERE u.email = 'lucia@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Barracuda', 9.8, 25.5185, -80.2085, NULL, FALSE, NULL, '2026-03-22 12:10:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Barracuda', 9.8, 10.6485, -85.6585, NULL, FALSE, NULL, '2026-03-22 12:10:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
-			 WHERE u.email = 'diego@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Kayak Racing League - Miami')`,
+			 WHERE u.email = 'diego@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon', 58.5, 25.5150, -80.2000, NULL, TRUE, 'lucia_kayak', '2026-09-12 10:00:00'
-			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
-			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
-			nil,
-		},
-		{
-			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Snook', 7.2, 25.5155, -80.2005, NULL, TRUE, 'lucia_kayak', '2026-09-12 11:30:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon', 58.5, 10.6450, -85.6610, NULL, TRUE, 'lucia_kayak', '2026-09-12 10:00:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Jack Crevalle', 4.4, 25.8505, -80.3505, NULL, FALSE, NULL, '2026-03-15 08:00:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Snook', 7.2, 10.6455, -85.6615, NULL, TRUE, 'lucia_kayak', '2026-09-12 11:30:00'
+			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
+			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
+			nil,
+		},
+		{
+			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Jack Crevalle', 4.4, 9.9805, -84.9805, NULL, FALSE, NULL, '2026-03-15 08:00:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'carlos@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
 			nil,
@@ -502,95 +502,95 @@ func SeedData() error {
 		// ---------- Tracking en vivo ----------
 		{
 			`INSERT INTO live_tracking (user_id, trip_id, latitude, longitude, speed, heading, altitude, is_active)
-			 SELECT u.id, t.id, 25.5250, -80.2050, 8.5, 90, 1, TRUE
+			 SELECT u.id, t.id, 10.6600, -85.6700, 8.5, 90, 1, TRUE
 			 FROM users u, trips t
-			 WHERE u.email = 'peter@hemingway.com' AND t.title = 'Live: Florida Bay Crossing'`,
+			 WHERE u.email = 'peter@hemingway.com' AND t.title = 'En vivo: Cruce por el Golfo'`,
 			nil,
 		},
 		{
 			`INSERT INTO live_tracking (user_id, trip_id, latitude, longitude, speed, heading, altitude, is_active)
-			 SELECT u.id, NULL, 25.5350, -80.2150, 6.2, 120, 1, TRUE
+			 SELECT u.id, NULL, 10.7050, -85.7000, 6.2, 120, 1, TRUE
 			 FROM users u WHERE u.email = 'marina@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO live_tracking (user_id, trip_id, latitude, longitude, speed, heading, altitude, is_active)
-			 SELECT u.id, NULL, 25.9505, -80.2805, 5.0, 200, 1, TRUE
+			 SELECT u.id, NULL, 9.7155, -85.0055, 5.0, 200, 1, TRUE
 			 FROM users u WHERE u.email = 'lucia@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO live_tracking (user_id, trip_id, latitude, longitude, speed, is_active)
-			 SELECT u.id, t.id, 25.7617, -80.1918, 0, FALSE
+			 SELECT u.id, t.id, 9.9382, -84.8371, 0, FALSE
 			 FROM users u, trips t
-			 WHERE u.email = 'carlos@hemingway.com' AND t.title = 'Miami Everglades Expedition'`,
+			 WHERE u.email = 'carlos@hemingway.com' AND t.title = 'Travesia al Golfo de Nicoya'`,
 			nil,
 		},
 
 		// ---------- Sesiones de tracking ----------
 		{
 			`INSERT INTO tracking_sessions (id, user_id, trip_id, start_time, start_lat, start_lon, total_distance, is_live, viewer_count)
-			 SELECT gen_random_uuid(), u.id, t.id, '2026-11-16 07:00:00', 25.5250, -80.2050, 0, TRUE, 12
+			 SELECT gen_random_uuid(), u.id, t.id, '2026-11-16 07:00:00', 10.6600, -85.6700, 0, TRUE, 12
 			 FROM users u, trips t
-			 WHERE u.email = 'peter@hemingway.com' AND t.title = 'Live: Florida Bay Crossing'`,
+			 WHERE u.email = 'peter@hemingway.com' AND t.title = 'En vivo: Cruce por el Golfo'`,
 			nil,
 		},
 		{
 			`INSERT INTO tracking_sessions (id, user_id, trip_id, start_time, end_time, start_lat, start_lon, end_lat, end_lon, total_distance, is_live, viewer_count)
-			 SELECT gen_random_uuid(), u.id, t.id, '2026-03-15 06:00:00', '2026-03-15 14:30:00', 25.7617, -80.1918, 25.8900, -80.3600, 28.5, FALSE, 43
+			 SELECT gen_random_uuid(), u.id, t.id, '2026-03-15 06:00:00', '2026-03-15 14:30:00', 9.9382, -84.8371, 10.1200, -85.0200, 28.5, FALSE, 43
 			 FROM users u, trips t
-			 WHERE u.email = 'peter@hemingway.com' AND t.title = 'Miami Everglades Expedition'`,
+			 WHERE u.email = 'peter@hemingway.com' AND t.title = 'Travesia al Golfo de Nicoya'`,
 			nil,
 		},
 		{
 			`INSERT INTO tracking_sessions (id, user_id, trip_id, start_time, end_time, start_lat, start_lon, end_lat, end_lon, total_distance, is_live, viewer_count)
-			 SELECT gen_random_uuid(), u.id, t.id, '2026-03-22 08:00:00', '2026-03-22 10:00:00', 25.5100, -80.2000, 25.5300, -80.2200, 12.4, FALSE, 18
+			 SELECT gen_random_uuid(), u.id, t.id, '2026-03-22 08:00:00', '2026-03-22 10:00:00', 10.6517, -85.6610, 10.6900, -85.7000, 12.4, FALSE, 18
 			 FROM users u, trips t
-			 WHERE u.email = 'marina@hemingway.com' AND t.title = 'Crandon Park Sprint'`,
+			 WHERE u.email = 'marina@hemingway.com' AND t.title = 'Playa Hermosa Sprint'`,
 			nil,
 		},
 		{
 			`INSERT INTO tracking_sessions (id, user_id, trip_id, start_time, end_time, start_lat, start_lon, end_lat, end_lon, total_distance, is_live, viewer_count)
-			 SELECT gen_random_uuid(), u.id, t.id, '2026-03-20 06:30:00', '2026-03-20 11:00:00', 25.5100, -80.2000, 25.6500, -80.2500, 15.2, FALSE, 9
+			 SELECT gen_random_uuid(), u.id, t.id, '2026-03-20 06:30:00', '2026-03-20 11:00:00', 10.6517, -85.6610, 10.7200, -85.7500, 15.2, FALSE, 9
 			 FROM users u, trips t
-			 WHERE u.email = 'marina@hemingway.com' AND t.title = 'Biscayne Bay Morning'`,
+			 WHERE u.email = 'marina@hemingway.com' AND t.title = 'Manana en Playa Hermosa'`,
 			nil,
 		},
 
 		// ---------- Spots de pesca ----------
 		{
 			`INSERT INTO fishing_spots (id, user_id, name, description, latitude, longitude, rating, fish_caught, is_shared)
-			 SELECT gen_random_uuid(), id, 'Secret Point', 'Great for snook at dawn', 25.8500, -80.3500, 5, 47, TRUE
+			 SELECT gen_random_uuid(), id, 'Secret Point', 'Great for snook at dawn', 9.9800, -84.9800, 5, 47, TRUE
 			 FROM users WHERE email = 'peter@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO fishing_spots (id, user_id, name, description, latitude, longitude, rating, fish_caught, is_shared)
-			 SELECT gen_random_uuid(), id, 'North Bay Spots', 'Multiple species, deep water', 25.9500, -80.2800, 4, 32, TRUE
+			 SELECT gen_random_uuid(), id, 'North Bay Spots', 'Multiple species, deep water', 9.7125, -85.0056, 4, 32, TRUE
 			 FROM users WHERE email = 'peter@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO fishing_spots (id, user_id, name, description, latitude, longitude, rating, fish_caught, is_shared)
-			 SELECT gen_random_uuid(), id, 'Biscayne Inlet', 'Perfect for tarpon', 25.5100, -80.2000, 5, 28, TRUE
+			 SELECT gen_random_uuid(), id, 'Boca del Rio Tempisque', 'Perfect for tarpon', 10.6517, -85.6610, 5, 28, TRUE
 			 FROM users WHERE email = 'marina@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO fishing_spots (id, user_id, name, description, latitude, longitude, rating, fish_caught, is_shared)
-			 SELECT gen_random_uuid(), id, 'Crandon Flats', 'Aguas bajas, ideal para fotografia', 25.5300, -80.2200, 4, 15, TRUE
+			 SELECT gen_random_uuid(), id, 'Los Patos Flats', 'Aguas bajas, ideal para fotografia', 10.6900, -85.7000, 4, 15, TRUE
 			 FROM users WHERE email = 'lucia@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO fishing_spots (id, user_id, name, description, latitude, longitude, rating, fish_caught, is_shared)
-			 SELECT gen_random_uuid(), id, 'Pedal Cove', 'Cala tranquila para practicar pedal', 25.9700, -80.3000, 3, 8, FALSE
+			 SELECT gen_random_uuid(), id, 'Pedal Cove', 'Cala tranquila para practicar pedal', 9.7800, -85.0600, 3, 8, FALSE
 			 FROM users WHERE email = 'diego@hemingway.com'`,
 			nil,
 		},
 		{
 			`INSERT INTO fishing_spots (id, user_id, name, description, latitude, longitude, rating, fish_caught, is_shared)
-			 SELECT gen_random_uuid(), id, 'Family Cove', 'Zona segura para ninos', 25.8900, -80.3600, 4, 12, FALSE
+			 SELECT gen_random_uuid(), id, 'Family Cove', 'Zona segura para ninos', 10.1200, -85.0200, 4, 12, FALSE
 			 FROM users WHERE email = 'ana@hemingway.com'`,
 			nil,
 		},

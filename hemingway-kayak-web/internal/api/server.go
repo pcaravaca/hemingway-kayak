@@ -58,6 +58,11 @@ func NewServer(
 		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
 	}))
 
+	hub := ws.NewHub()
+	// El tracking deja de escribir solo en la DB: ahora también empuja cada
+	// punto a los browsers conectados por WebSocket.
+	trackingService.SetBroadcaster(hub)
+
 	return &Server{
 		app:               app,
 		db:                db,
@@ -67,7 +72,7 @@ func NewServer(
 		tournamentService: tournamentService,
 		tripService:       tripService,
 		historyService:    historyService,
-		wsHub:             ws.NewHub(),
+		wsHub:             hub,
 		jwtSecret:         []byte(cfg.JWTSecret),
 		revoked:           auth.NewRevocation(),
 	}
