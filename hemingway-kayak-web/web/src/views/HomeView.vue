@@ -80,11 +80,31 @@
         </div>
       </div>
     </section>
+
+    <!-- Sin sesión no se puede ver quién está en el agua (el endpoint es
+         protegido): se ofrece el login en lugar de una sección vacía. -->
+    <section class="section" v-else-if="!isAuthenticated">
+      <div class="section-head">
+        <span>02 — Ahora mismo</span>
+        <h2>En el agua</h2>
+      </div>
+      <div class="live">
+        <div class="live-row">
+          <div class="who">
+            <div>
+              <b>Seguí a los kayakers en vivo</b>
+              <span>La posición se comparte con tu cuenta</span>
+            </div>
+          </div>
+          <router-link to="/login" class="hemmingway-btn hemmingway-btn-secondary">Entrar</router-link>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
@@ -98,15 +118,25 @@ const liveLabel = computed(() =>
     : 'Tracking en vivo · Golfo de Nicoya'
 )
 
-onMounted(async () => {
-  try {
-    // El backend ya filtra is_active = 1; la respuesta no trae `isActive`.
-    const response = await axios.get('/api/v1/tracking/followers')
-    activeTrackers.value = response.data
-  } catch (error) {
-    console.error('Failed to load trackers:', error)
+async function loadTrackers() {
+  // /tracking/followers es un endpoint protegido. Sin sesión no se pide: antes
+  // se pedía igual y la consola se llenaba de 401 con la sección vacía.
+  if (!authStore.isAuthenticated) {
+    activeTrackers.value = []
+    return
   }
-})
+  try {
+    // El backend ya filtra is_active = TRUE.
+    const response = await axios.get('/api/v1/tracking/followers')
+    activeTrackers.value = response.data || []
+  } catch (error) {
+    console.error('No se pudo cargar el tracking en vivo:', error)
+    activeTrackers.value = []
+  }
+}
+
+onMounted(loadTrackers)
+watch(isAuthenticated, loadTrackers)
 
 function trackerName(tracker) {
   return tracker.displayName || tracker.username || tracker.userId || 'Kayaker'

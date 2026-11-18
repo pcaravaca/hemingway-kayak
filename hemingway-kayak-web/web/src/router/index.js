@@ -31,7 +31,8 @@ const routes = [
   {
     path: '/history',
     name: 'History',
-    component: () => import('@/views/HistoryView.vue')
+    component: () => import('@/views/HistoryView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/profile',
@@ -69,7 +70,8 @@ const routes = [
   {
     path: '/trips/:id',
     name: 'TripDetail',
-    component: () => import('@/views/TripDetailView.vue')
+    component: () => import('@/views/TripDetailView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',
