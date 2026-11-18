@@ -20,10 +20,10 @@ HemingwayKayak/
 │   ├── internal/             # api, models, services, ws
 │   ├── pkg/                  # database (PostgreSQL), auth (JWT)
 │   ├── migrations/           # SQL de migración
-│   └── web/                  # frontend Vue 3 + Vite + Tailwind
+│   ├── AGENTS.md             # reglas y datos del backend (DB, seed, deploy)
+│   └── web/                  # frontend Vue 3 + Vite (sin Tailwind: las clases de utilidad no generan CSS)
 ├── docs/                     # análisis, plan de desarrollo, decisiones
 ├── HemingwayKayak.sln        # agrupador estilo Visual Studio (solo carpetas)
-├── AGENTS.md                 # reglas por capa
 └── README.md
 ```
 
@@ -52,6 +52,13 @@ cd hemingway-kayak-web
 go run ./cmd/server
 ```
 
+> En este host WSL el `go` del PATH es el toolchain de **Windows** (`windows/amd64`):
+> `go build` funciona, pero `go run` no puede ejecutar el binario. Para levantar la API
+> acá hay que compilar para Linux y correr el binario:
+> `GOOS=linux GOARCH=amd64 go build -o hk-api ./cmd/server && PORT=8099 ./hk-api`
+> (con `-o` **relativo**: el Go de Windows traduce `/tmp/...` y `$HOME/...` a rutas de
+> Windows y el archivo aparece en otro lado).
+
 ### Frontend
 ```bash
 cd hemingway-kayak-web/web
@@ -59,6 +66,10 @@ npm install
 npm run dev        # Vite
 npm run build      # salida en web/dist/
 ```
+
+> El bundle de producción lleva `VITE_API_BASE=/` (`web/.env.production`): la SPA y la API
+> quedan en el **mismo origin** y nginx hace proxy de `/api` y `/ws`. No poner
+> `http://localhost:8080` en el build o la app no autentica fuera de la máquina local.
 
 ## Estado del proyecto (2026-11-16)
 
