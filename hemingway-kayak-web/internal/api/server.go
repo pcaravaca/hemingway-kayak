@@ -62,6 +62,9 @@ func NewServer(
 	// El tracking deja de escribir solo en la DB: ahora también empuja cada
 	// punto a los browsers conectados por WebSocket.
 	trackingService.SetBroadcaster(hub)
+	// Igual para el ranking de torneo: join/leave/captura actualizan la tabla
+	// en vivo de quien esté suscripto a la sala del torneo.
+	tournamentService.SetBroadcaster(hub)
 
 	return &Server{
 		app:               app,

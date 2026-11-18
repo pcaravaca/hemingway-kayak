@@ -5,6 +5,7 @@ export function useTrackingWebSocket() {
   const trackers = ref([])
   const tournamentUpdates = ref(null)
   let ws = null
+  let pendingRoom = null
 
   function connect() {
     // En produccion el WS queda en el mismo origin que la SPA (nginx hace proxy);
@@ -16,6 +17,12 @@ export function useTrackingWebSocket() {
     ws.onopen = () => {
       connected.value = true
       console.log('Tracking WebSocket connected')
+      // La suscripción puede pedirse antes de que el socket exista (el componente
+      // se monta, pide el torneo y recién después llama a connect()); sin esto,
+      // el primer subscribe se perdía y la sala quedaba vacía.
+      if (pendingRoom) {
+        ws.send(JSON.stringify({ action: 'subscribe', room: pendingRoom }))
+      }
     }
 
     ws.onclose = () => {
@@ -67,14 +74,20 @@ export function useTrackingWebSocket() {
   }
 
   function subscribeTournament(tournamentId) {
+    // El hub espera `room` (internal/ws/hub.go); antes se mandaba `tournamentId`
+    // y la sala quedaba vacía, así que la suscripción nunca tenía efecto.
+    pendingRoom = tournamentId
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ action: 'subscribe', tournamentId }))
+      ws.send(JSON.stringify({ action: 'subscribe', room: tournamentId }))
     }
   }
 
   function unsubscribeTournament(tournamentId) {
+    if (pendingRoom === tournamentId) {
+      pendingRoom = null
+    }
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ action: 'unsubscribe', tournamentId }))
+      ws.send(JSON.stringify({ action: 'unsubscribe', room: tournamentId }))
     }
   }
 

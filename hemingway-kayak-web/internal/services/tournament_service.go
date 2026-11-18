@@ -11,11 +11,94 @@ import (
 )
 
 type TournamentService struct {
-	db *sql.DB
+	db  *sql.DB
+	hub wsBroadcaster
 }
 
 func NewTournamentService(db *sql.DB) *TournamentService {
 	return &TournamentService{db: db}
+}
+
+// SetBroadcaster engancha el hub de WebSocket para el ranking en vivo.
+func (s *TournamentService) SetBroadcaster(hub wsBroadcaster) {
+	s.hub = hub
+}
+
+// rankingQuery es la única fuente de verdad del ranking: la usa GetRanking y
+// también el broadcast en vivo.
+const rankingQuery = `SELECT CAST(p.id AS VARCHAR(36)), CAST(p.user_id AS VARCHAR(36)), p.score, p.catches_count,
+	        p.current_lat, p.current_lon,
+	        u.username, u.display_name, k.name as kayak_name,
+	        ROW_NUMBER() OVER (ORDER BY p.score DESC, p.catches_count DESC) as rank
+	 FROM tournament_participants p
+	 JOIN users u ON p.user_id = u.id
+	 LEFT JOIN kayaks k ON p.kayak_id = k.id
+	 WHERE p.tournament_id = $1 AND p.status = 'active'`
+
+func (s *TournamentService) rankingFor(tournamentID string) []map[string]interface{} {
+	rows, err := s.db.QueryContext(context.Background(), rankingQuery, tournamentID)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	ranking := []map[string]interface{}{}
+	for rows.Next() {
+		var id, userID, username, displayName, kayakName sql.NullString
+		var score, currentLat, currentLon sql.NullFloat64
+		var catchesCount, rank sql.NullInt64
+
+		if err := rows.Scan(&id, &userID, &score, &catchesCount, &currentLat, &currentLon,
+			&username, &displayName, &kayakName, &rank); err != nil {
+			continue
+		}
+
+		r := map[string]interface{}{}
+		if id.Valid {
+			r["id"] = id.String
+		}
+		if userID.Valid {
+			r["userId"] = userID.String
+		}
+		if score.Valid {
+			r["score"] = score.Float64
+		}
+		if catchesCount.Valid {
+			r["catchesCount"] = catchesCount.Int64
+		}
+		if currentLat.Valid {
+			r["currentLat"] = currentLat.Float64
+		}
+		if currentLon.Valid {
+			r["currentLon"] = currentLon.Float64
+		}
+		if username.Valid {
+			r["username"] = username.String
+		}
+		if displayName.Valid {
+			r["displayName"] = displayName.String
+		}
+		if kayakName.Valid {
+			r["kayakName"] = kayakName.String
+		}
+		if rank.Valid {
+			r["rank"] = rank.Int64
+		}
+		ranking = append(ranking, r)
+	}
+
+	return ranking
+}
+
+// broadcastRanking empuja el ranking a la sala del torneo.
+func (s *TournamentService) broadcastRanking(tournamentID string) {
+	if s.hub == nil {
+		return
+	}
+	s.hub.BroadcastTo(tournamentID, "tournament", fiber.Map{
+		"tournamentId": tournamentID,
+		"rankings":     s.rankingFor(tournamentID),
+	})
 }
 
 func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
@@ -305,6 +388,9 @@ func (s *TournamentService) UpdateTournament(c *fiber.Ctx) error {
 		return c.Status(500).JSON(Error("Failed to update"))
 	}
 
+	// Si el torneo pasa a LIVE (o termina), quien esté mirando la tabla tiene que
+	// enterarse sin recargar.
+	s.broadcastRanking(id)
 	return c.JSON(Success("Tournament updated"))
 }
 
@@ -388,70 +474,7 @@ func (s *TournamentService) GetParticipants(c *fiber.Ctx) error {
 }
 
 func (s *TournamentService) GetRanking(c *fiber.Ctx) error {
-	tournamentID := c.Params("id")
-
-	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT CAST(p.id AS VARCHAR(36)), CAST(p.user_id AS VARCHAR(36)), p.score, p.catches_count,
-		        p.current_lat, p.current_lon,
-		        u.username, u.display_name, k.name as kayak_name,
-		        ROW_NUMBER() OVER (ORDER BY p.score DESC, p.catches_count DESC) as rank
-		 FROM tournament_participants p
-		 JOIN users u ON p.user_id = u.id
-		 LEFT JOIN kayaks k ON p.kayak_id = k.id
-		 WHERE p.tournament_id = $1 AND p.status = 'active'`,
-		tournamentID,
-	)
-	if err != nil {
-		return c.Status(500).JSON(Error("Database error"))
-	}
-	defer rows.Close()
-
-	ranking := []map[string]interface{}{}
-	for rows.Next() {
-		var id, userID, username, displayName, kayakName sql.NullString
-		var score, currentLat, currentLon sql.NullFloat64
-		var catchesCount, rank sql.NullInt64
-
-		if err := rows.Scan(&id, &userID, &score, &catchesCount, &currentLat, &currentLon,
-			&username, &displayName, &kayakName, &rank); err != nil {
-			continue
-		}
-
-		r := map[string]interface{}{}
-		if id.Valid {
-			r["id"] = id.String
-		}
-		if userID.Valid {
-			r["userId"] = userID.String
-		}
-		if score.Valid {
-			r["score"] = score.Float64
-		}
-		if catchesCount.Valid {
-			r["catchesCount"] = catchesCount.Int64
-		}
-		if currentLat.Valid {
-			r["currentLat"] = currentLat.Float64
-		}
-		if currentLon.Valid {
-			r["currentLon"] = currentLon.Float64
-		}
-		if username.Valid {
-			r["username"] = username.String
-		}
-		if displayName.Valid {
-			r["displayName"] = displayName.String
-		}
-		if kayakName.Valid {
-			r["kayakName"] = kayakName.String
-		}
-		if rank.Valid {
-			r["rank"] = rank.Int64
-		}
-		ranking = append(ranking, r)
-	}
-
-	return c.JSON(ranking)
+	return c.JSON(s.rankingFor(c.Params("id")))
 }
 
 func (s *TournamentService) JoinTournament(c *fiber.Ctx) error {
@@ -468,18 +491,42 @@ func (s *TournamentService) JoinTournament(c *fiber.Ctx) error {
 	}
 	input.UserID = middleware.UserID(c)
 
-	_, err := s.db.ExecContext(context.Background(),
-		`INSERT INTO tournament_participants (tournament_id, user_id, kayak_id, status, joined_at)
-		 VALUES ($1, $2, $3, 'registered', now())`,
+	// kayak_id es opcional: un string vacío no es un UUID válido y Postgres
+	// rechaza el INSERT con un 500 pelado. NullString deja la columna en NULL.
+	var kayakID sql.NullString
+	if input.KayakID != "" {
+		kayakID = sql.NullString{String: input.KayakID, Valid: true}
+	}
+
+	// 'active' y no 'registered': el ranking filtra por status='active', así que
+	// con 'registered' el recién unido nunca aparecía en la tabla del torneo.
+	// Idempotente: volver a unirse reactiva la fila en lugar de duplicarla.
+	res, err := s.db.ExecContext(context.Background(),
+		`UPDATE tournament_participants
+		    SET status = 'active', kayak_id = $3, joined_at = now()
+		  WHERE tournament_id = $1 AND user_id = $2`,
 		tournamentID,
 		input.UserID,
-		input.KayakID,
+		kayakID,
 	)
-
 	if err != nil {
 		return c.Status(500).JSON(Error("Failed to join"))
 	}
 
+	if n, err := res.RowsAffected(); err == nil && n == 0 {
+		_, err = s.db.ExecContext(context.Background(),
+			`INSERT INTO tournament_participants (tournament_id, user_id, kayak_id, status, joined_at)
+			 VALUES ($1, $2, $3, 'active', now())`,
+			tournamentID,
+			input.UserID,
+			kayakID,
+		)
+		if err != nil {
+			return c.Status(500).JSON(Error("Failed to join"))
+		}
+	}
+
+	s.broadcastRanking(tournamentID)
 	return c.Status(201).JSON(Success("Joined tournament"))
 }
 
@@ -507,6 +554,7 @@ func (s *TournamentService) LeaveTournament(c *fiber.Ctx) error {
 		return c.Status(500).JSON(Error("Failed to leave"))
 	}
 
+	s.broadcastRanking(tournamentID)
 	return c.JSON(Success("Left tournament"))
 }
 
@@ -566,6 +614,8 @@ func (s *TournamentService) RecordCatch(c *fiber.Ctx) error {
 	}
 
 	tx.Commit()
+	// La captura cambia score y catches_count: hay que empujar el ranking nuevo.
+	s.broadcastRanking(tournamentID)
 	return c.Status(201).JSON(fiber.Map{"id": catchID, "success": true})
 }
 
