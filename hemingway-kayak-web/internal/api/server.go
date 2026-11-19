@@ -84,6 +84,9 @@ func NewServer(
 	}
 }
 
+// App expone la aplicación Fiber; lo usan los tests de integración (app.Test).
+func (s *Server) App() *fiber.App { return s.app }
+
 // Start levanta el servidor (bloquea hasta que el listener falle).
 func (s *Server) Start() error {
 	s.setupRoutes()
