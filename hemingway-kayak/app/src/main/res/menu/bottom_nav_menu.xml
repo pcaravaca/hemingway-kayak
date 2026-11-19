@@ -13,10 +13,6 @@
         android:icon="@android:drawable/ic_menu_myplaces"
         android:title="@string/tournaments_title" />
     <item
-        android:id="@+id/historyFragment"
-        android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="@string/history_title" />
-    <item
         android:id="@+id/trackingFragment"
         android:icon="@android:drawable/ic_menu_mylocation"
         android:title="@string/tracking_title" />

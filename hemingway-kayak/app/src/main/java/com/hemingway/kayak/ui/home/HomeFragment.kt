@@ -43,6 +43,10 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.action_home_to_map)
         }
 
+        binding.historyButton.setOnClickListener {
+            findNavController().navigate(R.id.historyFragment)
+        }
+
         binding.settingsButton.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_settings)
         }
