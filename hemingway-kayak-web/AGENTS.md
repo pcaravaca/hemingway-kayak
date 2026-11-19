@@ -11,11 +11,11 @@ Web companion app for Hemingway Kayak Android app.
 - **Trip Planning**: Plan fishing trips
 
 ### Tech Stack
-- **Backend**: Go 1.21+ with Fiber v2 framework
-- **Frontend**: Vue 3 with Composition API, Pinia, Vue Router
+- **Backend**: Go 1.25 con Fiber v2
+- **Frontend**: Vue 3 (`<script setup>`) + Pinia + Vue Router + Vite
 - **Database**: PostgreSQL 18 (servidor Ubuntu)
-- **Maps**: Leaflet (OSM)
-- **WebSocket**: Fiber WebSocket for real-time updates
+- **Maps**: Leaflet con tiles de OpenStreetMap
+- **WebSocket**: Fiber WebSocket (`/ws/tracking`) para el tracking en vivo
 
 ## Project Structure
 
@@ -26,7 +26,7 @@ hemingway-kayak-web/
 ├── internal/
 │   ├── api/             # HTTP handlers
 │   │   └── server.go    # Fiber server setup, routes
-│   ├── models/         # Data models
+│   ├── models/         # (sin uso: los modelos viven en services)
 │   │   └── models.go
 │   ├── services/        # Business logic
 │   │   ├── user_service.go
@@ -39,19 +39,29 @@ hemingway-kayak-web/
 ├── pkg/
 │   └── database/       # DB connections & migrations
 │       └── database.go # PostgreSQL, migrations, seed data
+├── migrations/          # SQL incrustrado (go:embed) y aplicado en el arranque
+│   ├── 001_init.sql
+│   ├── 002_costa_rica.sql
+│   └── 003_costa_rica_resto.sql
 ├── web/                # Vue 3 frontend
 │   ├── src/
 │   │   ├── assets/
-│   │   │   └── hemingway.css  # Shared design system
-│   │   ├── components/
+│   │   │   └── hemingway.css  # Design system "Carta"
 │   │   ├── views/
 │   │   │   ├── HomeView.vue
+│   │   │   ├── DashboardView.vue
 │   │   │   ├── TrackingView.vue
 │   │   │   ├── TournamentsView.vue
 │   │   │   ├── TournamentDetailView.vue
+│   │   │   ├── TournamentCreateView.vue
+│   │   │   ├── TripDetailView.vue
 │   │   │   ├── HistoryView.vue
 │   │   │   ├── LoginView.vue
-│   │   │   └── ProfileView.vue
+│   │   │   ├── RegisterView.vue
+│   │   │   ├── ProfileView.vue
+│   │   │   ├── ProfileEditView.vue
+│   │   │   ├── DownloadView.vue
+│   │   │   └── NotFoundView.vue
 │   │   ├── stores/
 │   │   │   └── auth.js       # Pinia auth store
 │   │   ├── composables/
@@ -70,7 +80,7 @@ hemingway-kayak-web/
 ### Backend
 
 ```bash
-cd /mnt/c/Users/Peter/Documents/Main\ Repo/hemingway-kayak-web
+cd /mnt/d/Workspace/Main\ Repo/HemingwayKayak/hemingway-kayak-web
 
 # Download dependencies
 go mod download
@@ -85,7 +95,7 @@ go run cmd/server/main.go
 ### Frontend
 
 ```bash
-cd /mnt/c/Users/Peter/Documents/Main\ Repo/hemingway-kayak-web/web
+cd /mnt/d/Workspace/Main\ Repo/HemingwayKayak/hemingway-kayak-web/web
 
 # Install dependencies
 npm install
@@ -101,11 +111,11 @@ npm run build
 
 ```bash
 # Terminal 1 - Backend
-cd /mnt/c/Users/Peter/Documents/Main\ Repo/hemingway-kayak-web
+cd /mnt/d/Workspace/Main\ Repo/HemingwayKayak/hemingway-kayak-web
 go run cmd/server/main.go  # Server on :8080
 
 # Terminal 2 - Frontend
-cd /mnt/c/Users/Peter/Documents/Main\ Repo/hemingway-kayak-web/web
+cd /mnt/d/Workspace/Main\ Repo/HemingwayKayak/hemingway-kayak-web/web
 npm run dev  # Frontend on :5173
 ```
 
@@ -282,21 +292,33 @@ CREATE TABLE IF NOT EXISTS fishing_spots (
 
 The server automatically seeds test data on first run:
 
-**Users:**
+**Users:** 6 cuentas de demostración.
+
 | Email | Username | Display Name |
 |-------|----------|--------------|
 | peter@hemingway.com | peter_kayak | Peter Garcia |
 | marina@hemingway.com | marina_kayak | Marina Rodriguez |
 | carlos@hemingway.com | carlos_kayak | Carlos Mendoza |
+| lucia@hemingway.com | lucia_kayak | Lucia Fernandez |
+| diego@hemingway.com | diego_kayak | Diego Torres |
+| ana@hemingway.com | ana_kayak | Ana Morales |
 
-**Password for all users:** `password123`
+**Password de todas las cuentas seed:** `HemingwayKayak2026!`
+(constante `seedPassword` en `pkg/database/database.go`).
+
+La cuenta real de Peter es `pcaravaca@gmail.com` (creada por registro, **no** por seed).
 
 **Sample Data:**
-- 3 kayaks (Explorer Pro, Sportster, Trawler 12)
-- 3 trips (Miami Everglades, Keys Weekend, Biscayne Bay)
-- 2 tournaments (Spring Kingfish Championship, Kayak Racing League)
-- 2 active tracking sessions
-- 3 fishing spots
+- 7 kayaks (Explorer Pro, Trawler 12, Sportster, Carbon Razor, Bay Stealth…)
+- 6 viajes, todos en **Costa Rica** (Golfo de Nicoya, Playa Hermosa, Isla Chira, Tambor)
+- 3 torneos (Campeonato Nacional de Kayak Fishing 2026, Liga de Carreras del Golfo, Fall Tarpon Shootout)
+- 3 trackers en vivo
+- 6 fishing spots
+- Participantes y capturas de ejemplo
+
+> El seed **sólo corre si la tabla `users` está vacía**. En la base ya sembrada
+> (`hemingway_dev`) no vuelve a correr: los cambios de la semilla se aplican con
+> las migraciones `002_costa_rica.sql` y `003_costa_rica_resto.sql`.
 
 ## API Endpoints
 
@@ -310,6 +332,8 @@ The server automatically seeds test data on first run:
 ### Users
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/v1/users/me` | Usuario autenticado |
+| GET | `/api/v1/users/me/stats` | KPIs del panel (salidas, waypoints, sesiones, torneos) |
 | GET | `/api/v1/users/:id` | Get user profile |
 | PUT | `/api/v1/users/:id` | Update user |
 | GET | `/api/v1/users/:id/profile` | Get user profile details |
