@@ -6,6 +6,12 @@
     app:startDestination="@id/homeFragment">
 
     <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.hemingway.kayak.ui.auth.LoginFragment"
+        android:label="@string/login_title"
+        tools:layout="@layout/fragment_login" />
+
+    <fragment
         android:id="@+id/homeFragment"
         android:name="com.hemingway.kayak.ui.home.HomeFragment"
         android:label="@string/home_title"

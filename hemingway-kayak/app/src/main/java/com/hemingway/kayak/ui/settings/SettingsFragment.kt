@@ -6,8 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import com.hemingway.kayak.R
+import com.hemingway.kayak.data.remote.AuthRepository
 import com.hemingway.kayak.databinding.FragmentSettingsBinding
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class SettingsFragment : Fragment() {
@@ -16,6 +20,9 @@ class SettingsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: SettingsViewModel by viewModels()
+
+    @Inject
+    lateinit var authRepository: AuthRepository
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,6 +66,18 @@ class SettingsFragment : Fragment() {
 
         binding.trackRouteSwitch.setOnCheckedChangeListener { _, isChecked ->
             viewModel.updateTrackRoute(isChecked)
+        }
+
+        binding.logoutButton.setOnClickListener {
+            authRepository.logout()
+            // Se limpia toda la pila: volver atrás no tiene que devolver a la app.
+            findNavController().navigate(
+                R.id.loginFragment,
+                null,
+                androidx.navigation.navOptions {
+                    popUpTo(R.id.nav_graph) { inclusive = true }
+                }
+            )
         }
     }
 

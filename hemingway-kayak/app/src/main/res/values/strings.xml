@@ -8,6 +8,14 @@
     <string name="fishing_title">Pesca</string>
     <string name="map_title">Mapa</string>
     <string name="settings_title">Ajustes</string>
+    <string name="login_title">Entrar</string>
+    <string name="login_subtitle">Tu bitácora y tus salidas</string>
+    <string name="login_email">Correo</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_button">Entrar</string>
+    <string name="login_empty_fields">Completá correo y contraseña</string>
+    <string name="login_failed">No pudimos ingresar. Revisá correo y contraseña.</string>
+    <string name="logout_button">Cerrar sesión</string>
     
     <!-- Botones comunes / Common buttons -->
     <string name="btn_save">Guardar</string>

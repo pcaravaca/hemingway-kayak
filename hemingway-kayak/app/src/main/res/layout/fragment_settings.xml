@@ -272,5 +272,16 @@
             android:textSize="12sp"
             tools:text="Version 1.0" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logoutButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:text="@string/logout_button"
+            android:textColor="@color/logo_turquoise"
+            app:strokeColor="@color/logo_turquoise" />
+
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
