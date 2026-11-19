@@ -2,8 +2,12 @@ package com.hemingway.kayak.data.remote
 
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
+import okhttp3.MultipartBody
 
 /**
  * Cliente del backend de Hemingway Kayak (Fiber + PostgreSQL).
@@ -62,6 +66,24 @@ interface KayakApiService {
 
     @GET("api/v1/trips/mine")
     suspend fun myTrips(): List<TripDto>
+
+    @POST("api/v1/trips/")
+    suspend fun createTrip(@Body body: TripRequest): TripCreatedDto
+
+    @PUT("api/v1/trips/{id}")
+    suspend fun updateTrip(@Path("id") id: String, @Body body: TripUpdateRequest): ApiResponse
+
+    // --- Fotos ---
+    @Multipart
+    @POST("api/v1/uploads")
+    suspend fun uploadPhoto(@Part photo: MultipartBody.Part): UploadDto
+
+    // --- Spots ---
+    @GET("api/v1/spots")
+    suspend fun spots(): List<SpotDto>
+
+    @POST("api/v1/spots/")
+    suspend fun createSpot(@Body body: SpotRequest): ApiResponse
 
     companion object {
         // Por defecto el emulador; se pisa con API_BASE_URL en local.properties.

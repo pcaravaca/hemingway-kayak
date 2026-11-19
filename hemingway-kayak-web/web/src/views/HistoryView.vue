@@ -3,7 +3,10 @@
     <div class="history-header">
       <h1 class="hemingway-title">Historial de salidas</h1>
       <div class="header-actions">
-        <select v-model="filterType" class="hemingway-input filter-select">
+        <router-link to="/salidas/nueva" class="hemmingway-btn hemmingway-btn-primary">
+          Nueva salida
+        </router-link>
+        <select v-model="filterType" class="hemmingway-input filter-select">
           <option value="ALL">Todos los tipos</option>
           <option value="FISHING">Pesca</option>
           <option value="CAMPING">Campamento</option>

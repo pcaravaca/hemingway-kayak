@@ -85,6 +85,19 @@ class TrackingFragment : Fragment() {
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                trackingUploader.distanceKm.collect { km ->
+                    binding.pointsText.text = String.format(
+                        java.util.Locale.getDefault(),
+                        "%d puntos · %.2f km",
+                        pointCount,
+                        km
+                    )
+                }
+            }
+        }
     }
 
     private fun requestOrStart() {
@@ -130,7 +143,7 @@ class TrackingFragment : Fragment() {
         mapView.invalidate()
 
         pointCount += 1
-        binding.pointsText.text = "$pointCount puntos"
+        binding.pointsText.text = "$pointCount puntos · 0.00 km"
     }
 
     private fun renderState(tracking: Boolean) {

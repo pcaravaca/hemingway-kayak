@@ -118,3 +118,55 @@ data class TripDto(
     @Json(name = "startLat") val startLat: Double?,
     @Json(name = "startLon") val startLon: Double?
 )
+
+@JsonClass(generateAdapter = true)
+data class TripRequest(
+    val title: String,
+    val description: String?,
+    val type: String,
+    val startLat: Double?,
+    val startLon: Double?
+)
+
+@JsonClass(generateAdapter = true)
+data class TripUpdateRequest(
+    val status: String?,
+    val endLat: Double?,
+    val endLon: Double?,
+    val distance: Double?
+)
+
+@JsonClass(generateAdapter = true)
+data class TripCreatedDto(
+    val id: String,
+    val success: Boolean?
+)
+
+@JsonClass(generateAdapter = true)
+data class UploadDto(
+    val filename: String?,
+    val url: String?,
+    val success: Boolean?
+)
+
+@JsonClass(generateAdapter = true)
+data class SpotDto(
+    val id: String,
+    val name: String,
+    val description: String?,
+    val latitude: Double,
+    val longitude: Double,
+    val rating: Int?,
+    @Json(name = "isShared") val isShared: Boolean?,
+    @Json(name = "displayName") val displayName: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class SpotRequest(
+    val name: String,
+    val description: String?,
+    val latitude: Double,
+    val longitude: Double,
+    val rating: Int,
+    @Json(name = "isShared") val isShared: Boolean
+)

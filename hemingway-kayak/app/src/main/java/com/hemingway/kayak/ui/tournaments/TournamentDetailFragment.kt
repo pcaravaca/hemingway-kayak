@@ -1,6 +1,8 @@
 package com.hemingway.kayak.ui.tournaments
 
+import android.net.Uri
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,6 +14,7 @@ import com.hemingway.kayak.data.remote.ParticipantDto
 import com.hemingway.kayak.data.remote.RankingDto
 import com.hemingway.kayak.data.remote.TournamentDto
 import com.hemingway.kayak.data.remote.TournamentRepository
+import com.hemingway.kayak.data.remote.PhotoRepository
 import com.hemingway.kayak.data.remote.UserRepository
 import com.hemingway.kayak.databinding.FragmentTournamentDetailBinding
 import com.hemingway.kayak.databinding.ItemCatchBinding
@@ -32,8 +35,12 @@ class TournamentDetailFragment : Fragment() {
     @Inject
     lateinit var userRepository: UserRepository
 
+    @Inject
+    lateinit var photoRepository: PhotoRepository
+
     private val tournamentId: String by lazy { arguments?.getString("id").orEmpty() }
     private var myParticipant: ParticipantDto? = null
+    private var selectedPhoto: Uri? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,7 +55,21 @@ class TournamentDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.joinButton.setOnClickListener { join() }
         binding.catchButton.setOnClickListener { recordCatch() }
+        binding.photoButton.setOnClickListener { pickPhoto() }
         load()
+    }
+
+    private val pickImage = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            selectedPhoto = uri
+            binding.photoButton.text = "Foto elegida ✓"
+        }
+    }
+
+    private fun pickPhoto() {
+        pickImage.launch("image/*")
     }
 
     private fun load() {
@@ -153,6 +174,7 @@ class TournamentDetailFragment : Fragment() {
         }
         binding.catchButton.isEnabled = false
         viewLifecycleOwner.lifecycleScope.launch {
+            val photoUrl = selectedPhoto?.let { photoRepository.upload(it) }
             val error = repository.recordCatch(
                 tournamentId = tournamentId,
                 participantId = participant.id,
@@ -160,7 +182,7 @@ class TournamentDetailFragment : Fragment() {
                 weight = weight,
                 latitude = null,
                 longitude = null,
-                photoUrl = null
+                photoUrl = photoUrl
             )
             binding.catchButton.isEnabled = true
             if (error != null) {
@@ -170,6 +192,8 @@ class TournamentDetailFragment : Fragment() {
             }
             binding.speciesInput.text?.clear()
             binding.weightInput.text?.clear()
+            selectedPhoto = null
+            binding.photoButton.text = "Elegir foto"
             load()
         }
     }

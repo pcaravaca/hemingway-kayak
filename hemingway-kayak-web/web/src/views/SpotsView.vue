@@ -1,8 +1,12 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
+const auth = useAuthStore()
+const isAuthenticated = computed(() => auth.isAuthenticated)
 
 const spots = ref([])
 const loading = ref(true)
@@ -10,6 +14,11 @@ const error = ref(null)
 const selected = ref(null)
 const mapContainer = ref(null)
 let map = null
+
+const showForm = ref(false)
+const saving = ref(false)
+const formError = ref(null)
+const form = ref({ name: '', description: '', latitude: '', longitude: '', rating: 5 })
 
 const FAVORITES = [
   { name: 'Golfo de Nicoya', lat: 9.9382, lon: -84.8371 },
@@ -50,6 +59,38 @@ function initMap() {
   }
 }
 
+async function save() {
+  formError.value = null
+  if (!form.value.name.trim()) {
+    formError.value = 'El nombre es obligatorio'
+    return
+  }
+  const lat = Number(form.value.latitude)
+  const lon = Number(form.value.longitude)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    formError.value = 'Faltan las coordenadas'
+    return
+  }
+  saving.value = true
+  try {
+    await axios.post('/api/v1/spots/', {
+      name: form.value.name.trim(),
+      description: form.value.description || null,
+      latitude: lat,
+      longitude: lon,
+      rating: Number(form.value.rating) || 0,
+      isShared: true
+    })
+    showForm.value = false
+    form.value = { name: '', description: '', latitude: '', longitude: '', rating: 5 }
+    await load()
+  } catch (e) {
+    formError.value = e.response?.data?.error || 'No se pudo compartir el spot'
+  } finally {
+    saving.value = false
+  }
+}
+
 function flyTo(spot) {
   selected.value = spot
   if (map && spot.latitude && spot.longitude) {
@@ -84,6 +125,13 @@ onBeforeUnmount(() => {
         >
           {{ place.name }}
         </button>
+        <button
+          v-if="isAuthenticated"
+          class="hemmingway-btn hemmingway-btn-primary"
+          @click="showForm = true"
+        >
+          Compartir spot
+        </button>
       </div>
     </div>
 
@@ -91,6 +139,39 @@ onBeforeUnmount(() => {
     <div v-else-if="error" class="empty-state">
       <h3>No se pudieron cargar los spots</h3>
       <p class="text-muted">{{ error }}</p>
+    </div>
+
+    <div v-if="showForm" class="hemmingway-card spot-form">
+      <h3>Compartir un spot</h3>
+      <label class="field">
+        <span>Nombre</span>
+        <input v-model="form.name" class="hemmingway-input" />
+      </label>
+      <label class="field">
+        <span>Descripción</span>
+        <input v-model="form.description" class="hemmingway-input" />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Latitud</span>
+          <input v-model="form.latitude" type="number" step="any" class="hemmingway-input" />
+        </label>
+        <label class="field">
+          <span>Longitud</span>
+          <input v-model="form.longitude" type="number" step="any" class="hemmingway-input" />
+        </label>
+      </div>
+      <label class="field">
+        <span>Calificación (0-5)</span>
+        <input v-model="form.rating" type="number" min="0" max="5" class="hemmingway-input" />
+      </label>
+      <div class="form-actions">
+        <button class="hemmingway-btn hemmingway-btn-ghost" @click="showForm = false">Cancelar</button>
+        <button class="hemmingway-btn hemmingway-btn-primary" :disabled="saving" @click="save">
+          {{ saving ? 'Guardando...' : 'Compartir' }}
+        </button>
+      </div>
+      <p v-if="formError" class="form-error">{{ formError }}</p>
     </div>
 
     <template v-else>
@@ -183,5 +264,38 @@ onBeforeUnmount(() => {
 }
 .empty-state {
   text-align: center;
+}
+.spot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.spot-form h3 {
+  margin: 0;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field > span {
+  font-size: 0.8rem;
+  color: var(--hemmingway-text-muted, #8ba3bd);
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.form-error {
+  margin: 0;
+  color: #ff8a80;
+  font-size: 0.85rem;
 }
 </style>

@@ -108,6 +108,16 @@
             android:textColorHint="#8BA3BD" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/photoButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Elegir foto"
+            android:textColor="@color/logo_turquoise"
+            app:strokeColor="@color/logo_turquoise" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/catchButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

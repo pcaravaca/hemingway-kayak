@@ -22,7 +22,7 @@ Hemingway Kayak is an Android application designed to enhance the kayak fishing 
 
 - **Location Features**
   - GPS tracking
-  - Google Maps integration
+  - Mapa con osmdroid (spots de pesca locales)
   - Current location weather
 
 ### Technical Details
@@ -31,7 +31,7 @@ Hemingway Kayak is an Android application designed to enhance the kayak fishing 
 - **Languages**: Kotlin
 - **Architecture**: MVVM
 - **Key Dependencies**:
-  - Google Maps & Location Services
+  - osmdroid + Fused Location Provider
   - OpenWeatherMap API
   - Retrofit for API communication
   - Room for local storage
@@ -60,9 +60,8 @@ Hemingway Kayak is an Android application designed to enhance the kayak fishing 
 ### Setup Requirements
 
 1. Android Studio Arctic Fox or newer
-2. Google Maps API key
-3. OpenWeatherMap API key
-4. Android device or emulator with Google Play Services
+2. OpenWeatherMap API key
+3. Android device or emulator (API 24+)
 
 ### Possible Improvements
 
@@ -96,7 +95,7 @@ Hemingway Kayak es una aplicación Android diseñada para mejorar la experiencia
 
 - **Funciones de Ubicación**
   - Seguimiento GPS
-  - Integración con Google Maps
+  - Mapa con osmdroid (spots de pesca locales)
   - Clima en ubicación actual
 
 ### Detalles Técnicos
@@ -105,7 +104,7 @@ Hemingway Kayak es una aplicación Android diseñada para mejorar la experiencia
 - **Lenguajes**: Kotlin
 - **Arquitectura**: MVVM
 - **Dependencias Principales**:
-  - Google Maps y Servicios de Ubicación
+  - osmdroid + Fused Location Provider
   - API de OpenWeatherMap
   - Retrofit para comunicación con API
   - Room para almacenamiento local
@@ -134,9 +133,8 @@ Hemingway Kayak es una aplicación Android diseñada para mejorar la experiencia
 ### Requisitos de Configuración
 
 1. Android Studio Arctic Fox o más reciente
-2. Clave de API de Google Maps
-3. Clave de API de OpenWeatherMap
-4. Dispositivo Android o emulador con Google Play Services
+2. Clave de API de OpenWeatherMap
+3. Dispositivo Android o emulador (API 24+)
 
 ### Posibles Mejoras
 

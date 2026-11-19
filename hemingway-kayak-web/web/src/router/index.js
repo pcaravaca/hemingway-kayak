@@ -90,6 +90,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/salidas/nueva',
+    name: 'TripCreate',
+    component: () => import('@/views/TripCreateView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue')

@@ -113,6 +113,24 @@
             app:layout_constraintWidth_max="400dp" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/spotsButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginStart="@dimen/spacing_xl"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:layout_marginEnd="@dimen/spacing_xl"
+            android:backgroundTint="@color/logo_neon"
+            android:text="Spots"
+            android:textColor="@color/logo_dark"
+            android:textSize="@dimen/text_size_subtitle"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconGravity="start"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/historyButton"
+            app:layout_constraintWidth_max="400dp" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/settingsButton"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
@@ -129,7 +147,7 @@
             app:strokeColor="@color/logo_turquoise"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/historyButton"
+            app:layout_constraintTop_toBottomOf="@+id/spotsButton"
             app:layout_constraintWidth_max="400dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -105,12 +105,24 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const activeTrackers = ref([])
+
+// La landing es para quien no entró. Si ya está logueado, manda al panel: antes el
+// home seguía mostrando todo el marketing aunque ya hubiera sesión.
+const router = useRouter()
+watch(
+  isAuthenticated,
+  (logged) => {
+    if (logged) router.replace('/panel')
+  },
+  { immediate: true }
+)
 
 const liveLabel = computed(() =>
   activeTrackers.value.length

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/logo_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_lg">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Spots compartidos"
+            android:textColor="@color/logo_neon"
+            android:textSize="@dimen/text_size_headline"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="Los puntos que compartió la comunidad"
+            android:textColor="@color/logo_turquoise"
+            android:textSize="@dimen/text_size_body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addSpotButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:backgroundTint="@color/logo_turquoise"
+            android:text="Compartir un spot"
+            android:textColor="@color/logo_dark"
+            app:icon="@android:drawable/ic_menu_add"
+            app:iconGravity="start" />
+
+        <LinearLayout
+            android:id="@+id/spotForm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/spotName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nombre"
+                android:inputType="text"
+                android:textColor="@color/white"
+                android:textColorHint="#8BA3BD" />
+
+            <EditText
+                android:id="@+id/spotDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:hint="Descripción"
+                android:inputType="text"
+                android:textColor="@color/white"
+                android:textColorHint="#8BA3BD" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/spotLat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Latitud"
+                    android:inputType="numberDecimal|numberSigned"
+                    android:textColor="@color/white"
+                    android:textColorHint="#8BA3BD" />
+
+                <EditText
+                    android:id="@+id/spotLon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_xs"
+                    android:layout_weight="1"
+                    android:hint="Longitud"
+                    android:inputType="numberDecimal|numberSigned"
+                    android:textColor="@color/white"
+                    android:textColorHint="#8BA3BD" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/useMyLocationButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:text="Usar mi ubicación"
+                android:textColor="@color/logo_turquoise"
+                app:strokeColor="@color/logo_turquoise" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/saveSpotButton"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:backgroundTint="@color/logo_turquoise"
+                android:text="Compartir"
+                android:textColor="@color/logo_dark" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/errorView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:textColor="@color/logo_neon"
+            android:textSize="@dimen/text_size_body"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/emptyView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:text="Todavía no hay spots"
+            android:textColor="#8BA3BD"
+            android:textSize="@dimen/text_size_body"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/spotsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:orientation="vertical" />
+
+    </LinearLayout>
+</ScrollView>
