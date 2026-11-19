@@ -84,6 +84,11 @@
             <span>Especie (a mano)</span>
             <input v-model="catchForm.speciesOther" class="hemmingway-input" placeholder="Ej.: Robalo" required />
           </label>
+          <p v-if="selectedSpecies" class="field-hint">
+            <span v-if="selectedSpecies.sizeCm" class="hint-strong">Talla habitual {{ selectedSpecies.sizeCm }} cm</span>
+            <span class="hint-sep" v-if="selectedSpecies.sizeCm">·</span>
+            <span>{{ selectedSpecies.incopesca }}</span>
+          </p>
           <div class="row">
             <label class="field">
               <span>Peso (kg)</span>
@@ -205,6 +210,12 @@ function speciesScientific(commonName) {
   const s = speciesList.value.find(x => x.commonName === commonName)
   return s?.scientific || ''
 }
+
+// Especie elegida en el selector: de donde sale la talla legal (INCOPESCA) y la
+// talla habitual que se muestran bajo el campo.
+const selectedSpecies = computed(
+  () => speciesList.value.find(x => x.commonName === catchForm.species) || null
+)
 
 const { connect, subscribeTournament, unsubscribeTournament, tournamentUpdates } = useTrackingWebSocket()
 
@@ -617,6 +628,19 @@ function formatLocation(lat, lon) {
   text-transform: uppercase;
   color: var(--hemmingway-text-muted);
 }
+
+/* Talla habitual + talla legal (INCOPESCA) de la especie elegida. Va fuera del
+   .field para que no quede como label del selector. */
+.field-hint {
+  margin: -8px 0 0;
+  font-family: var(--hemmingway-font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--hemmingway-text-muted);
+}
+
+.field-hint .hint-strong { color: var(--hemmingway-accent, #38BDF8); }
+.field-hint .hint-sep { margin: 0 6px; opacity: .5; }
 
 .message { font-size: 14px; color: var(--hemmingway-accent-error); margin: 0; }
 .message.ok { color: var(--hemmingway-accent-success); }
