@@ -444,28 +444,28 @@ func SeedData() error {
 		// ---------- Capturas ----------
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'King Mackerel', 12.4, 10.6555, -85.6655, NULL, TRUE, 'marina_kayak', '2026-03-22 09:30:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Macarela / Sierra', 12.4, 10.6555, -85.6655, NULL, TRUE, 'marina_kayak', '2026-03-22 09:30:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Spanish Mackerel', 8.1, 10.6560, -85.6660, NULL, TRUE, 'marina_kayak', '2026-03-22 10:05:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Macarela / Sierra', 8.1, 10.6560, -85.6660, NULL, TRUE, 'marina_kayak', '2026-03-22 10:05:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon', 42.0, 10.6905, -85.7005, NULL, FALSE, NULL, '2026-03-22 11:20:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon / Atlantic Tarpon', 42.0, 10.6905, -85.7005, NULL, FALSE, NULL, '2026-03-22 11:20:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'marina@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Snapper', 5.6, 10.6725, -85.6805, NULL, TRUE, 'peter_kayak', '2026-03-22 11:40:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Pargo', 5.6, 10.6725, -85.6805, NULL, TRUE, 'peter_kayak', '2026-03-22 11:40:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'lucia@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Liga de Carreras del Golfo')`,
 			nil,
@@ -479,21 +479,21 @@ func SeedData() error {
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon', 58.5, 10.6450, -85.6610, NULL, TRUE, 'lucia_kayak', '2026-09-12 10:00:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Tarpon / Atlantic Tarpon', 58.5, 10.6450, -85.6610, NULL, TRUE, 'lucia_kayak', '2026-09-12 10:00:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Snook', 7.2, 10.6455, -85.6615, NULL, TRUE, 'lucia_kayak', '2026-09-12 11:30:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Robalo / Snook', 7.2, 10.6455, -85.6615, NULL, TRUE, 'lucia_kayak', '2026-09-12 11:30:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'peter@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
 			nil,
 		},
 		{
 			`INSERT INTO tournament_catches (id, tournament_id, participant_id, species, weight, latitude, longitude, photo_url, verified, verified_by, created_at)
-			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Jack Crevalle', 4.4, 9.9805, -84.9805, NULL, FALSE, NULL, '2026-03-15 08:00:00'
+			 SELECT gen_random_uuid(), p.tournament_id, p.id, 'Jurel', 4.4, 9.9805, -84.9805, NULL, FALSE, NULL, '2026-03-15 08:00:00'
 			 FROM tournament_participants p JOIN users u ON p.user_id = u.id
 			 WHERE u.email = 'carlos@hemingway.com' AND p.tournament_id IN (SELECT id FROM tournaments WHERE name = 'Fall Tarpon Shootout')`,
 			nil,

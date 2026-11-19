@@ -398,6 +398,17 @@ La cuenta real de Peter es `pcaravaca@gmail.com` (creada por registro, **no** po
 | PUT | `/api/v1/spots/:id` | Update spot |
 | DELETE | `/api/v1/spots/:id` | Delete spot |
 
+### Species (DB de peces CR)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/species` | DB de peces de Costa Rica; `?habitat=rio\|estuario\|mar` |
+| GET | `/api/v1/species/:id` | Una especie |
+
+Seed: `migrations/004_species.sql` crea la tabla y carga 18 especies desde el JSON del
+Vault (`Pesca/cr-fish-field-guide`); `migrations/005_incopesca_y_capturas.sql` rellena
+`incopesca` con las tallas legales de **INCOPESCA AJDIP/026-2018** y agrega Tarpon.
+`tournament_catches.species` es texto libre ( guarda el nombre común de esta tabla).
+
 ### Health
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -405,15 +416,24 @@ La cuenta real de Peter es `pcaravaca@gmail.com` (creada por registro, **no** po
 
 ### WebSocket Messages
 
+El hub (`internal/ws/hub.go`) maneja **salas**: el cliente se suscribe con el `id` del
+torneo y recibe sólo lo de esa sala. `room` vacío = broadcast a todos.
+
 ```json
 // Client -> Server
-{"action": "subscribe", "tournamentId": "uuid"}
-{"action": "unsubscribe", "tournamentId": "uuid"}
+{"action": "subscribe", "room": "uuid-del-torneo"}
+{"action": "unsubscribe", "room": "uuid-del-torneo"}
 
 // Server -> Client
-{"type": "tracking", "data": {"userId": "...", "latitude": 40.7, "longitude": -74.0}}
-{"type": "tournament", "data": {"rankings": [...]}}
+{"type": "tracking", "data": {"userId": "...", "latitude": 10.655, "longitude": -85.665}}
+{"type": "tracking-stop", "data": {"userId": "..."}}
+{"type": "tournament", "data": {"tournamentId": "...", "rankings": [...]}}
 ```
+
+- El tracking sale a **todos** (`room` vacío): es el feed público de posiciones.
+- El ranking de torneo sale **sólo a la sala del torneo**, y se emite en `join`, `leave`,
+  `captura` y `update` de torneo (`TournamentService.broadcastRanking`). El mensaje es
+  exactamente lo que devuelve `GET /tournaments/:id/ranking`.
 
 ## Design System
 
