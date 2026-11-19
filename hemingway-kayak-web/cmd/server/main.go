@@ -44,8 +44,9 @@ func main() {
 	tripService := services.NewTripService(db)
 	historyService := services.NewHistoryService(db)
 	speciesService := services.NewSpeciesService(db)
+	uploadService := services.NewUploadService()
 
-	server := api.NewServer(db, redisClient, userService, trackingService, tournamentService, tripService, historyService, speciesService)
+	server := api.NewServer(db, redisClient, userService, trackingService, tournamentService, tripService, historyService, speciesService, uploadService)
 
 	go func() {
 		if err := server.Start(); err != nil {

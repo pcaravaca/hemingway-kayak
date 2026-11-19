@@ -1,17 +1,23 @@
 package api
 
 import (
+	"bytes"
 	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
 	"hemingway-kayak-web/internal/services"
+	"hemingway-kayak-web/pkg/auth"
+	"hemingway-kayak-web/pkg/config"
 	"hemingway-kayak-web/pkg/database"
 )
 
@@ -34,6 +40,9 @@ func integrationApp(t *testing.T) *fiber.App {
 	}
 	t.Cleanup(func() { _ = db.Close() })
 
+	// Cada prueba sube las fotos a su propia carpeta temporal.
+	t.Setenv("UPLOAD_DIR", t.TempDir())
+
 	// Una sola vez por proceso: asegura esquema y seed. En la DB de desarrollo ya
 	// están aplicados y queda en un no-op.
 	once.Do(func() {
@@ -54,6 +63,7 @@ func integrationApp(t *testing.T) *fiber.App {
 		services.NewTripService(db),
 		services.NewHistoryService(db),
 		services.NewSpeciesService(db),
+		services.NewUploadService(),
 	)
 	// NewServer sólo arma la app; las rutas se registran en Start(), que los tests
 	// no llaman porque usan app.Test directamente.
@@ -147,5 +157,81 @@ func TestLoginRejectsBadPassword(t *testing.T) {
 		`{"email":"peter@hemingway.com","password":"incorrecta"}`)
 	if code != 401 {
 		t.Fatalf("login con clave mala: esperaba 401, llegó %d (%s)", code, body)
+	}
+}
+
+func testToken(t *testing.T, userID, email string) string {
+	t.Helper()
+	token, err := auth.Generate([]byte(config.Load().JWTSecret), userID, email, time.Hour)
+	if err != nil {
+		t.Fatalf("no se pudo firmar el token de prueba: %v", err)
+	}
+	return token
+}
+
+// multipartRequest arma un POST /uploads con un archivo.
+func multipartRequest(t *testing.T, field, filename string, content []byte) *http.Request {
+	t.Helper()
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	part, err := w.CreateFormFile(field, filename)
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := part.Write(content); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	_ = w.Close()
+	req := httptest.NewRequest("POST", "/api/v1/uploads", &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	return req
+}
+
+// El PNG más chico posible (1x1 transparente); http.DetectContentType lo reconoce.
+var tinyPNG = []byte{
+	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+	0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+	0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+	0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+	0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
+	0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+}
+
+func TestUploadPhoto(t *testing.T) {
+	app := integrationApp(t)
+	token := testToken(t, "00000000-0000-0000-0000-000000000001", "peter@hemingway.com")
+
+	// Sin sesión no se puede subir.
+	code, _ := do(app, "POST", "/api/v1/uploads", "", "")
+	if code != 401 {
+		t.Errorf("upload sin token: esperaba 401, llegó %d", code)
+	}
+
+	// Content-Type Trampa: el contenido manda, no el header.
+	req := multipartRequest(t, "photo", "foto.txt", []byte("esto no es una imagen"))
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 415 {
+		t.Errorf("upload de texto: esperaba 415, llegó %d", resp.StatusCode)
+	}
+
+	// Una foto válida se guarda y queda servida.
+	req = multipartRequest(t, "photo", "captura.png", tinyPNG)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err = app.Test(req)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 201 {
+		t.Fatalf("upload válido: esperaba 201, llegó %d (%s)", resp.StatusCode, raw)
+	}
+	if !strings.Contains(string(raw), "/uploads/") {
+		t.Errorf("la respuesta no devuelve la URL: %s", raw)
 	}
 }

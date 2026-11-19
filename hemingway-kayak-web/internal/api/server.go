@@ -28,9 +28,10 @@ type Server struct {
 	trackingService   *services.TrackingService
 	tournamentService *services.TournamentService
 	tripService       *services.TripService
-	historyService    *services.HistoryService
-	speciesService    *services.SpeciesService
-	wsHub             *ws.Hub
+	historyService  *services.HistoryService
+	speciesService  *services.SpeciesService
+	uploadService   *services.UploadService
+	wsHub           *ws.Hub
 	jwtSecret         []byte
 	revoked           *auth.Revocation
 }
@@ -44,6 +45,7 @@ func NewServer(
 	tripService *services.TripService,
 	historyService *services.HistoryService,
 	speciesService *services.SpeciesService,
+	uploadService *services.UploadService,
 ) *Server {
 	cfg := config.Load()
 	app := fiber.New(fiber.Config{
@@ -78,6 +80,7 @@ func NewServer(
 		tripService:       tripService,
 		historyService:    historyService,
 		speciesService:    speciesService,
+		uploadService:     uploadService,
 		wsHub:             hub,
 		jwtSecret:         []byte(cfg.JWTSecret),
 		revoked:           auth.NewRevocation(),
@@ -113,6 +116,9 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
+	// Las fotos de las capturas se sirven estáticas desde el mismo origen.
+	s.app.Static("/uploads", services.UploadDir())
+
 	// --- Público ---
 	api.Post("/auth/register", s.userService.Register)
 	api.Post("/auth/login", s.userService.Login)
@@ -133,6 +139,9 @@ func (s *Server) setupRoutes() {
 	sec := api.Group("", middleware.JWTAuth(s.jwtSecret, s.revoked))
 
 	sec.Post("/auth/logout", s.userService.Logout)
+
+	// Fotos de captura (multipart). Se sirven estáticas desde /uploads.
+	sec.Post("/uploads", s.uploadService.UploadPhoto)
 
 	sec.Get("/users/me", s.userService.GetMe)
 	sec.Get("/users/me/stats", s.userService.GetMyStats)

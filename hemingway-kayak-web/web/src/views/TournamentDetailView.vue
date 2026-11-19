@@ -95,8 +95,10 @@
               <input v-model.number="catchForm.weight" type="number" step="0.1" min="0" class="hemmingway-input" required />
             </label>
             <label class="field">
-              <span>Foto (URL, opcional)</span>
-              <input v-model="catchForm.photoUrl" class="hemmingway-input" placeholder="https://…" />
+              <span>Foto de la captura</span>
+              <input type="file" accept="image/*" class="hemmingway-input" @change="onPhotoSelected" />
+              <img v-if="catchForm.photoUrl" :src="catchForm.photoUrl" class="catch-photo" alt="Foto de la captura" />
+              <span v-if="uploadingPhoto" class="field-hint">Subiendo foto…</span>
             </label>
           </div>
           <div class="row">
@@ -183,6 +185,35 @@ const participantMarkers = {}
 const savingCatch = ref(false)
 const catchSaved = ref(false)
 const catchMessage = ref('')
+const uploadingPhoto = ref(false)
+
+// La foto se sube a /api/v1/uploads y lo que se guarda en la captura es la URL
+// que devuelve el backend (se sirve estática desde el mismo origen).
+async function onPhotoSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  if (file.size > 8 * 1024 * 1024) {
+    catchSaved.value = false
+    catchMessage.value = 'La foto supera los 8 MB.'
+    event.target.value = ''
+    return
+  }
+
+  uploadingPhoto.value = true
+  catchMessage.value = ''
+  try {
+    const form = new FormData()
+    form.append('photo', file)
+    const { data } = await axios.post('/api/v1/uploads', form)
+    catchForm.photoUrl = data.url
+  } catch (e) {
+    catchSaved.value = false
+    catchMessage.value = e.response?.data?.error || 'No se pudo subir la foto.'
+    event.target.value = ''
+  } finally {
+    uploadingPhoto.value = false
+  }
+}
 
 const catchForm = reactive({
   species: '',
@@ -641,6 +672,15 @@ function formatLocation(lat, lon) {
 
 .field-hint .hint-strong { color: var(--hemmingway-accent, #38BDF8); }
 .field-hint .hint-sep { margin: 0 6px; opacity: .5; }
+
+.catch-photo {
+  display: block;
+  max-width: 240px;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(139, 163, 189, .25);
+}
 
 .message { font-size: 14px; color: var(--hemmingway-accent-error); margin: 0; }
 .message.ok { color: var(--hemmingway-accent-success); }
