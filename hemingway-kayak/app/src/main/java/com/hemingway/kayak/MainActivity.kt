@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.hemingway.kayak.R
 import com.hemingway.kayak.data.UserPreferencesManager
 import com.hemingway.kayak.data.remote.AuthRepository
@@ -41,6 +43,10 @@ class MainActivity : AppCompatActivity() {
         val graph = navController.navInflater.inflate(R.navigation.nav_graph)
         graph.setStartDestination(if (authRepository.isLoggedIn) R.id.homeFragment else R.id.loginFragment)
         navController.graph = graph
+
+        // La barra inferior y el grafo comparten los ids de destino.
+        findViewById<BottomNavigationView>(R.id.bottomNav)
+            .setupWithNavController(navController)
     }
 
     private fun loadUserPreferences() {

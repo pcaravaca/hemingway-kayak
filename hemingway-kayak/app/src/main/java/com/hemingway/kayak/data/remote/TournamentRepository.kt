@@ -7,6 +7,9 @@ import javax.inject.Singleton
 class TournamentRepository @Inject constructor(
     private val client: BackendClient
 ) {
+    suspend fun tournament(id: String): TournamentDto? =
+        runCatching { client.api.tournament(id) }.getOrNull()
+
     suspend fun tournaments(): List<TournamentDto> =
         runCatching { client.api.tournaments() }.getOrDefault(emptyList())
 
@@ -15,6 +18,9 @@ class TournamentRepository @Inject constructor(
 
     suspend fun ranking(tournamentId: String): List<RankingDto> =
         runCatching { client.api.ranking(tournamentId) }.getOrDefault(emptyList())
+
+    suspend fun participants(tournamentId: String): List<ParticipantDto> =
+        runCatching { client.api.participants(tournamentId) }.getOrDefault(emptyList())
 
     suspend fun catches(tournamentId: String): List<CatchDto> =
         runCatching { client.api.catches(tournamentId) }.getOrDefault(emptyList())

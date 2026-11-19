@@ -41,6 +41,9 @@ interface KayakApiService {
     @GET("api/v1/tournaments/{id}/ranking")
     suspend fun ranking(@Path("id") id: String): List<RankingDto>
 
+    @GET("api/v1/tournaments/{id}/participants")
+    suspend fun participants(@Path("id") id: String): List<ParticipantDto>
+
     @GET("api/v1/tournaments/{id}/catches")
     suspend fun catches(@Path("id") id: String): List<CatchDto>
 
@@ -49,6 +52,16 @@ interface KayakApiService {
 
     @POST("api/v1/tournaments/{id}/catches")
     suspend fun recordCatch(@Path("id") id: String, @Body body: RecordCatchRequest): ApiResponse
+
+    // --- Usuario y salidas propias ---
+    @GET("api/v1/users/me")
+    suspend fun me(): UserDto
+
+    @GET("api/v1/users/me/stats")
+    suspend fun myStats(): StatsDto
+
+    @GET("api/v1/trips/mine")
+    suspend fun myTrips(): List<TripDto>
 
     companion object {
         // Por defecto el emulador; se pisa con API_BASE_URL en local.properties.

@@ -8,6 +8,9 @@
     <string name="fishing_title">Pesca</string>
     <string name="map_title">Mapa</string>
     <string name="settings_title">Ajustes</string>
+    <string name="tournaments_title">Torneos</string>
+    <string name="history_title">Salidas</string>
+    <string name="profile_title">Perfil</string>
     <string name="login_title">Entrar</string>
     <string name="login_subtitle">Tu bitácora y tus salidas</string>
     <string name="login_email">Correo</string>

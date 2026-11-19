@@ -31,7 +31,10 @@ data class UserDto(
     val id: String,
     val email: String,
     val username: String?,
-    @Json(name = "displayName") val displayName: String?
+    @Json(name = "displayName") val displayName: String?,
+    @Json(name = "avatarUrl") val avatarUrl: String?,
+    val bio: String?,
+    @Json(name = "trackingEnabled") val trackingEnabled: Boolean?
 )
 
 @JsonClass(generateAdapter = true)
@@ -60,6 +63,18 @@ data class CatchDto(
 )
 
 @JsonClass(generateAdapter = true)
+data class ParticipantDto(
+    val id: String,
+    @Json(name = "userId") val userId: String?,
+    val status: String?,
+    val score: Double?,
+    @Json(name = "catchesCount") val catchesCount: Long?,
+    @Json(name = "displayName") val displayName: String?,
+    val username: String?,
+    @Json(name = "kayakName") val kayakName: String?
+)
+
+@JsonClass(generateAdapter = true)
 data class RankingDto(
     val id: String,
     @Json(name = "userId") val userId: String?,
@@ -77,4 +92,29 @@ data class TrackingPointRequest(
     val speed: Double?,
     val heading: Double?,
     val altitude: Double?
+)
+
+@JsonClass(generateAdapter = true)
+data class StatsDto(
+    val sessions: Long?,
+    val spots: Long?,
+    val tournaments: Long?,
+    val trips: Long?,
+    @Json(name = "totalDistance") val totalDistance: Double?,
+    @Json(name = "totalWaypoints") val totalWaypoints: Long?,
+    @Json(name = "liveSessions") val liveSessions: Long?
+)
+
+@JsonClass(generateAdapter = true)
+data class TripDto(
+    val id: String,
+    val title: String?,
+    val description: String?,
+    val type: String?,
+    val status: String?,
+    @Json(name = "startTime") val startTime: String?,
+    @Json(name = "endTime") val endTime: String?,
+    val distance: Double?,
+    @Json(name = "startLat") val startLat: Double?,
+    @Json(name = "startLon") val startLon: Double?
 )
