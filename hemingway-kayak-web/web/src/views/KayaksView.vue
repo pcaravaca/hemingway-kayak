@@ -22,6 +22,7 @@ const emptyForm = {
 }
 
 const form = ref({ ...emptyForm })
+const confirmingId = ref(null)
 
 const TYPES = ['SIT_ON_TOP', 'SIT_INSIDE', 'INFLATABLE', 'FISHING', 'RACING', 'TOURING']
 const MATERIALS = ['FIBERGLASS', 'PLASTIC', 'CARBON', 'WOOD', 'INFLATABLE']
@@ -100,10 +101,18 @@ async function save() {
   }
 }
 
+function askRemove(kayak) {
+  confirmingId.value = kayak.id
+}
+
+function cancelRemove() {
+  confirmingId.value = null
+}
+
 async function remove(kayak) {
-  if (!confirm(`¿Eliminar "${kayak.name}"?`)) return
   try {
     await axios.delete(`/api/v1/kayaks/${kayak.id}`)
+    confirmingId.value = null
     await load()
   } catch (e) {
     error.value = e.response?.data?.error || 'No se pudo eliminar el kayak'
@@ -171,7 +180,19 @@ onMounted(load)
           <button class="hemmingway-btn hemmingway-btn-ghost" @click="openEdit(kayak)">
             Editar
           </button>
-          <button class="hemmingway-btn hemmingway-btn-secondary" @click="remove(kayak)">
+          <template v-if="confirmingId === kayak.id">
+            <button class="hemmingway-btn hemmingway-btn-secondary" @click="remove(kayak)">
+              Confirmar
+            </button>
+            <button class="hemmingway-btn hemmingway-btn-ghost" @click="cancelRemove">
+              Cancelar
+            </button>
+          </template>
+          <button
+            v-else
+            class="hemmingway-btn hemmingway-btn-secondary"
+            @click="askRemove(kayak)"
+          >
             Eliminar
           </button>
         </div>
