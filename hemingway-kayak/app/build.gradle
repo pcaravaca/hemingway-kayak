@@ -21,6 +21,10 @@ android {
         versionCode 1
         versionName "1.0"
         buildConfigField "String", "WEATHER_API_KEY", "\"${localProperties.getProperty('WEATHER_API_KEY', 'YOUR_OPENWEATHERMAP_API_KEY')}\""
+        // Backend de Hemingway Kayak. Por defecto el emulador (10.0.2.2 es el host);
+        // para un dispositivo real se pisa en local.properties, p.ej.
+        //   API_BASE_URL=http://100.89.167.67:8080/
+        buildConfigField "String", "API_BASE_URL", "\"${localProperties.getProperty('API_BASE_URL', 'http://10.0.2.2:8080/')}\""
     }
 
     buildTypes {

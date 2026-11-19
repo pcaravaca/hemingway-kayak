@@ -7,6 +7,7 @@ import com.hemingway.kayak.data.KayakDatabase
 import com.hemingway.kayak.data.WeatherApiService
 import com.hemingway.kayak.data.WeatherDao
 import com.hemingway.kayak.data.WeatherRepository
+import com.hemingway.kayak.data.remote.TokenStore
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -69,6 +70,13 @@ object DataModule {
         return Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
             .build()
+    }
+
+    // JWT de la sesión contra el backend de Hemingway Kayak.
+    @Singleton
+    @Provides
+    fun provideTokenStore(@ApplicationContext context: Context): TokenStore {
+        return TokenStore(context)
     }
 
     @Singleton

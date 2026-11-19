@@ -94,7 +94,31 @@ func (s *UserService) Register(c *fiber.Ctx) error {
 		return c.Status(400).JSON(Error("Email or username already exists"))
 	}
 
-	return c.Status(201).JSON(Success("User registered successfully"))
+	// Devuelve el token igual que Login: la app (y cualquier cliente) queda
+	// logueada de una en vez de tener que hacer un segundo llamado.
+	var userID string
+	if err := s.db.QueryRowContext(context.Background(),
+		`SELECT id FROM users WHERE email = $1`, input.Email,
+	).Scan(&userID); err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+
+	token, err := s.generateToken(userID, input.Email)
+	if err != nil {
+		return c.Status(500).JSON(Error("Failed to generate token"))
+	}
+
+	user, err := s.fetchUser(userID)
+	if err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+
+	return c.Status(201).JSON(fiber.Map{
+		"success": true,
+		"token":   token,
+		"userId":  userID,
+		"user":    user,
+	})
 }
 
 func (s *UserService) Login(c *fiber.Ctx) error {
