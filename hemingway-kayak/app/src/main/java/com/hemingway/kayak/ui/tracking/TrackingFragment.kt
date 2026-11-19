@@ -109,7 +109,7 @@ class TrackingFragment : Fragment() {
 
     private fun observeLocations() {
         viewLifecycleOwner.lifecycleScope.launch {
-            trackingUploader.tracker.currentLocation.collect { location ->
+            trackingUploader.locations.collect { location ->
                 if (location == null) return@collect
                 if (!trackingUploader.isTracking.value) return@collect
                 drawPoint(location.latitude, location.longitude)

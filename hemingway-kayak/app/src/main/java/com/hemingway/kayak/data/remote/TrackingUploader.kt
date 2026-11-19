@@ -26,6 +26,9 @@ class TrackingUploader @Inject constructor(
     private val _isTracking = MutableStateFlow(false)
     val isTracking: StateFlow<Boolean> = _isTracking.asStateFlow()
 
+    /** Última ubicación conocida; la usan las pantallas para dibujar. */
+    val locations: StateFlow<android.location.Location?> get() = tracker.currentLocation
+
     fun start(tripId: String? = null) {
         tracker.onLocation = { location ->
             scope.launch { tracking.point(location) }
