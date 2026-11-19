@@ -29,6 +29,7 @@ type Server struct {
 	tournamentService *services.TournamentService
 	tripService       *services.TripService
 	historyService    *services.HistoryService
+	speciesService    *services.SpeciesService
 	wsHub             *ws.Hub
 	jwtSecret         []byte
 	revoked           *auth.Revocation
@@ -42,6 +43,7 @@ func NewServer(
 	tournamentService *services.TournamentService,
 	tripService *services.TripService,
 	historyService *services.HistoryService,
+	speciesService *services.SpeciesService,
 ) *Server {
 	cfg := config.Load()
 	app := fiber.New(fiber.Config{
@@ -75,6 +77,7 @@ func NewServer(
 		tournamentService: tournamentService,
 		tripService:       tripService,
 		historyService:    historyService,
+		speciesService:    speciesService,
 		wsHub:             hub,
 		jwtSecret:         []byte(cfg.JWTSecret),
 		revoked:           auth.NewRevocation(),
@@ -120,6 +123,8 @@ func (s *Server) setupRoutes() {
 	api.Get("/tournaments/:id/catches", s.tournamentService.GetCatches)
 	api.Get("/trips", s.tripService.GetTrips)
 	api.Get("/spots", s.tripService.GetSharedSpots)
+	api.Get("/species", s.speciesService.GetSpecies)
+	api.Get("/species/:id", s.speciesService.GetSpeciesByID)
 
 	// --- Autenticado ---
 	sec := api.Group("", middleware.JWTAuth(s.jwtSecret, s.revoked))

@@ -70,7 +70,19 @@
         <form class="catch-form" @submit.prevent="submitCatch">
           <label class="field">
             <span>Especie</span>
-            <input v-model="catchForm.species" class="hemmingway-input" placeholder="Ej.: Robalo" required />
+            <select v-model="catchForm.species" class="hemmingway-input" required>
+              <option value="" disabled>Elegí la especie</option>
+              <optgroup v-for="g in speciesGroups" :key="g.label" :label="g.label">
+                <option v-for="s in g.items" :key="s.id" :value="s.commonName">
+                  {{ s.commonName }}
+                </option>
+              </optgroup>
+              <option value="__otra__">Otra (no está en la lista)</option>
+            </select>
+          </label>
+          <label v-if="catchForm.species === '__otra__'" class="field">
+            <span>Especie (a mano)</span>
+            <input v-model="catchForm.speciesOther" class="hemmingway-input" placeholder="Ej.: Robalo" required />
           </label>
           <div class="row">
             <label class="field">
@@ -128,6 +140,7 @@
             <div class="catch-main">
               <b>{{ c.species }}</b>
               <span class="catch-by">{{ c.username }}</span>
+              <span v-if="speciesScientific(c.species)" class="catch-sci">{{ speciesScientific(c.species) }}</span>
             </div>
             <div class="catch-meta">
               <span class="weight">{{ c.weight.toFixed(1) }} kg</span>
@@ -156,6 +169,7 @@ const auth = useAuthStore()
 const tournament = ref(null)
 const rankings = ref([])
 const catches = ref([])
+const speciesList = ref([])
 const loading = ref(true)
 const mapContainer = ref(null)
 let map = null
@@ -167,11 +181,30 @@ const catchMessage = ref('')
 
 const catchForm = reactive({
   species: '',
+  speciesOther: '',
   weight: null,
   latitude: null,
   longitude: null,
   photoUrl: ''
 })
+
+// Agrupa la DB de peces por hábitat para el selector del formulario de captura.
+const speciesGroups = computed(() => {
+  const labels = {
+    rio: 'Río (agua dulce)',
+    estuario: 'Estero / manglar (salobre)',
+    manglar: 'Manglar',
+    mar: 'Mar'
+  }
+  return ['rio', 'estuario', 'manglar', 'mar']
+    .map(h => ({ label: labels[h], items: speciesList.value.filter(s => s.habitat === h) }))
+    .filter(g => g.items.length)
+})
+
+function speciesScientific(commonName) {
+  const s = speciesList.value.find(x => x.commonName === commonName)
+  return s?.scientific || ''
+}
 
 const { connect, subscribeTournament, unsubscribeTournament, tournamentUpdates } = useTrackingWebSocket()
 
@@ -199,10 +232,11 @@ onUnmounted(() => {
 async function fetchTournament() {
   loading.value = true
   try {
-    const [tournamentRes, rankingRes, catchesRes] = await Promise.allSettled([
+    const [tournamentRes, rankingRes, catchesRes, speciesRes] = await Promise.allSettled([
       axios.get(`/api/v1/tournaments/${route.params.id}`),
       axios.get(`/api/v1/tournaments/${route.params.id}/ranking`),
-      axios.get(`/api/v1/tournaments/${route.params.id}/catches`)
+      axios.get(`/api/v1/tournaments/${route.params.id}/catches`),
+      axios.get('/api/v1/species')
     ])
     if (tournamentRes.status === 'fulfilled') {
       tournament.value = tournamentRes.value.data
@@ -210,6 +244,7 @@ async function fetchTournament() {
     }
     if (rankingRes.status === 'fulfilled') rankings.value = rankingRes.value.data || []
     if (catchesRes.status === 'fulfilled') catches.value = catchesRes.value.data || []
+    if (speciesRes.status === 'fulfilled') speciesList.value = speciesRes.value.data || []
   } catch (error) {
     console.error('No se pudo cargar el torneo:', error)
   } finally {
@@ -227,10 +262,21 @@ async function submitCatch() {
 
   savingCatch.value = true
   catchMessage.value = ''
+  // Si eligió "Otra", el valor es el que tipeó a mano; si no, el nombre común
+  // de la DB (que es lo que se guarda en tournament_catches.species).
+  const species = catchForm.species === '__otra__'
+    ? (catchForm.speciesOther || '').trim()
+    : catchForm.species
+  if (!species) {
+    catchSaved.value = false
+    catchMessage.value = 'Elegí o escribí la especie.'
+    savingCatch.value = false
+    return
+  }
   try {
     await axios.post(`/api/v1/tournaments/${route.params.id}/catches`, {
       participantId: participation.id,
-      species: catchForm.species,
+      species,
       weight: Number(catchForm.weight),
       latitude: catchForm.latitude,
       longitude: catchForm.longitude,
@@ -239,6 +285,7 @@ async function submitCatch() {
     catchSaved.value = true
     catchMessage.value = 'Captura cargada.'
     catchForm.species = ''
+    catchForm.speciesOther = ''
     catchForm.weight = null
     catchForm.photoUrl = ''
     await fetchTournament()
@@ -594,6 +641,15 @@ function formatLocation(lat, lon) {
   font-family: var(--hemmingway-font-mono);
   font-size: 11.5px;
   color: var(--hemmingway-text-muted);
+}
+
+.catch-sci {
+  display: block;
+  font-family: var(--hemmingway-font-mono);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--hemmingway-text-muted);
+  opacity: 0.8;
 }
 
 .catch-meta {
