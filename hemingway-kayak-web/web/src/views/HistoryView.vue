@@ -72,8 +72,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const trips = ref([])
 const loading = ref(true)
 const filterType = ref('ALL')
@@ -90,7 +92,15 @@ onMounted(async () => {
 async function fetchTrips() {
   loading.value = true
   try {
-    const response = await axios.get('/api/v1/trips')
+    // Solo las salidas del usuario logueado: /trips es el feed público (incluye
+    // salidas de otros) y /trips/:id está protegido por ownership, así que
+    // clickear una ajena daba 403.
+    const userId = auth.user?.id
+    if (!userId) {
+      trips.value = []
+      return
+    }
+    const response = await axios.get(`/api/v1/history/user/${userId}/trips`)
     trips.value = response.data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
   } catch (error) {
     console.error('Failed to fetch trips:', error)

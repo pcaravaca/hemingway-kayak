@@ -85,7 +85,7 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 
 	rows, err := s.db.QueryContext(context.Background(),
 		`SELECT t.id, t.user_id, t.title, t.triptype, t.status, t.start_time, t.end_time, 
-	        t.distance, t.created_at,
+	        t.distance, t.created_at, t.start_lat, t.start_lon,
 	        (SELECT COUNT(*) FROM trip_points WHERE trip_id = t.id) as point_count
 	 	FROM trips t
 	 	WHERE t.user_id = $1
@@ -101,10 +101,10 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 	for rows.Next() {
 		var id, userID, title, tripType, status sql.NullString
 		var startTime, endTime, createdAt sql.NullTime
-		var distance sql.NullFloat64
+		var distance, startLat, startLon sql.NullFloat64
 		var pointCount int
 
-		if err := rows.Scan(&id, &userID, &title, &tripType, &status, &startTime, &endTime, &distance, &createdAt, &pointCount); err != nil {
+		if err := rows.Scan(&id, &userID, &title, &tripType, &status, &startTime, &endTime, &distance, &createdAt, &startLat, &startLon, &pointCount); err != nil {
 			continue
 		}
 
@@ -124,8 +124,17 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 		if startTime.Valid {
 			trip["startTime"] = startTime.Time
 		}
+		if endTime.Valid {
+			trip["endTime"] = endTime.Time
+		}
 		if distance.Valid {
 			trip["distance"] = distance.Float64
+		}
+		if startLat.Valid {
+			trip["startLat"] = startLat.Float64
+		}
+		if startLon.Valid {
+			trip["startLon"] = startLon.Float64
 		}
 		trip["pointCount"] = pointCount
 		trips = append(trips, trip)

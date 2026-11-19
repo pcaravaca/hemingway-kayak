@@ -157,9 +157,14 @@ onMounted(load)
 
 async function load() {
   loading.value = true
+  // Salidas propias: /trips es el feed público y /trips/:id es del dueno,
+  // por lo que linkear una salida ajena daba 403.
+  const userId = authStore.user?.id
   const [statsRes, tripsRes, tourRes] = await Promise.allSettled([
     axios.get('/api/v1/users/me/stats'),
-    axios.get('/api/v1/trips'),
+    userId
+      ? axios.get(`/api/v1/history/user/${userId}/trips`)
+      : Promise.resolve({ data: [] }),
     axios.get('/api/v1/tournaments')
   ])
 
