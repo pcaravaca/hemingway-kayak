@@ -154,6 +154,8 @@ func (s *Server) setupRoutes() {
 	sec.Put("/kayaks/:id", middleware.RequireResourceOwnership(s.db, "kayaks", "user_id", "id"), s.userService.UpdateKayak)
 	sec.Delete("/kayaks/:id", middleware.RequireResourceOwnership(s.db, "kayaks", "user_id", "id"), s.userService.DeleteKayak)
 
+	// Salidas propias: mis coordenadas, para el historial y los detalles.
+	sec.Get("/trips/mine", s.tripService.GetMyTrips)
 	sec.Get("/trips/:id", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.GetTrip)
 	sec.Post("/trips/", s.tripService.CreateTrip)
 	sec.Put("/trips/:id", middleware.RequireResourceOwnership(s.db, "trips", "user_id", "id"), s.tripService.UpdateTrip)

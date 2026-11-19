@@ -19,31 +19,39 @@ func NewTripService(db *sql.DB) *TripService {
 	return &TripService{db: db}
 }
 
-func (s *TripService) GetTrips(c *fiber.Ctx) error {
-	userID := c.Query("userId")
-	tripType := c.Query("type")
-	status := c.Query("status")
-
-	query := `SELECT CAST(id AS VARCHAR(36)), CAST(user_id AS VARCHAR(36)), title, description, triptype, status, start_time, end_time, 
-	          start_lat, start_lon, end_lat, end_lon, distance, created_at 
+// tripQuery arma el SELECT de salidas con los filtros de querystring. Si
+// forcedUserID no está vacío, se fuerza el dueño (para la lista de "mis salidas").
+func (s *TripService) tripQuery(c *fiber.Ctx, forcedUserID string) (string, []interface{}) {
+	query := `SELECT CAST(id AS VARCHAR(36)), CAST(user_id AS VARCHAR(36)), title, description, triptype, status, start_time, end_time,
+	          start_lat, start_lon, end_lat, end_lon, distance, created_at
 	          FROM trips WHERE 1=1`
 	var args []interface{}
 
-	if userID != "" {
-		query += " AND user_id = $" + strconv.Itoa(len(args)+1)
-		args = append(args, userID)
+	owner := forcedUserID
+	if owner == "" {
+		owner = c.Query("userId")
 	}
-	if tripType != "" {
+	if owner != "" {
+		query += " AND user_id = $" + strconv.Itoa(len(args)+1)
+		args = append(args, owner)
+	}
+
+	if tripType := c.Query("type"); tripType != "" {
 		query += " AND triptype = $" + strconv.Itoa(len(args)+1)
 		args = append(args, tripType)
 	}
-	if status != "" {
+	if status := c.Query("status"); status != "" {
 		query += " AND status = $" + strconv.Itoa(len(args)+1)
 		args = append(args, status)
 	}
 
-	query += " ORDER BY created_at DESC"
+	return query + " ORDER BY created_at DESC", args
+}
 
+// GetTrips es el feed público de salidas. No expone coordenadas: son datos de
+// ubicación y el detalle de una salida ya es sólo del dueño.
+func (s *TripService) GetTrips(c *fiber.Ctx) error {
+	query, args := s.tripQuery(c, "")
 	rows, err := s.db.QueryContext(context.Background(), query, args...)
 	if err != nil {
 		return c.Status(500).JSON(Error("Database error"))
@@ -87,12 +95,6 @@ func (s *TripService) GetTrips(c *fiber.Ctx) error {
 		if endTime.Valid {
 			trip["endTime"] = endTime.Time
 		}
-		if startLat.Valid {
-			trip["startLat"] = startLat.Float64
-		}
-		if startLon.Valid {
-			trip["startLon"] = startLon.Float64
-		}
 		if distance.Valid {
 			trip["distance"] = distance.Float64
 		}
@@ -103,6 +105,82 @@ func (s *TripService) GetTrips(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(trips)
+}
+
+// GetMyTrips devuelve sólo las salidas del usuario autenticado: se usa para los
+// detalles (que son del dueño) y para el historial.
+func (s *TripService) GetMyTrips(c *fiber.Ctx) error {
+	query, args := s.tripQuery(c, middleware.UserID(c))
+	rows, err := s.db.QueryContext(context.Background(), query, args...)
+	if err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+	defer rows.Close()
+
+	return c.JSON(scanTrips(rows))
+}
+
+// scanTrips convierte las filas de una salida a JSON, con coordenadas (es para el
+// dueño; el feed público no las expone).
+func scanTrips(rows *sql.Rows) []map[string]interface{} {
+	trips := []map[string]interface{}{}
+	for rows.Next() {
+		var id, userID sql.NullString
+		var title, description, tripType, status sql.NullString
+		var startTime, endTime, createdAt sql.NullTime
+		var startLat, startLon, endLat, endLon, distance sql.NullFloat64
+
+		if err := rows.Scan(&id, &userID, &title, &description, &tripType, &status,
+			&startTime, &endTime, &startLat, &startLon, &endLat, &endLon, &distance, &createdAt); err != nil {
+			continue
+		}
+
+		trip := map[string]interface{}{}
+		if id.Valid {
+			trip["id"] = id.String
+		}
+		if userID.Valid {
+			trip["userId"] = userID.String
+		}
+		if title.Valid {
+			trip["title"] = title.String
+		}
+		if description.Valid {
+			trip["description"] = description.String
+		}
+		if tripType.Valid {
+			trip["type"] = tripType.String
+		}
+		if status.Valid {
+			trip["status"] = status.String
+		}
+		if startTime.Valid {
+			trip["startTime"] = startTime.Time
+		}
+		if endTime.Valid {
+			trip["endTime"] = endTime.Time
+		}
+		if startLat.Valid {
+			trip["startLat"] = startLat.Float64
+		}
+		if startLon.Valid {
+			trip["startLon"] = startLon.Float64
+		}
+		if endLat.Valid {
+			trip["endLat"] = endLat.Float64
+		}
+		if endLon.Valid {
+			trip["endLon"] = endLon.Float64
+		}
+		if distance.Valid {
+			trip["distance"] = distance.Float64
+		}
+		if createdAt.Valid {
+			trip["createdAt"] = createdAt.Time
+		}
+		trips = append(trips, trip)
+	}
+	return trips
 }
 
 func (s *TripService) GetTrip(c *fiber.Ctx) error {

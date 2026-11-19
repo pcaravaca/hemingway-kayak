@@ -137,6 +137,21 @@ func TestPublicReadEndpoints(t *testing.T) {
 			t.Errorf("%s: esperaba 200, llegó %d (%s)", path, code, body)
 		}
 	}
+
+	// El feed público no expone coordenadas: son datos de ubicación.
+	_, body := do(app, "GET", "/api/v1/trips", "", "")
+	if strings.Contains(body, "startLat") || strings.Contains(body, "startLon") {
+		t.Error("el feed público de salidas está exponiendo coordenadas")
+	}
+}
+
+func TestMyTripsRequiresToken(t *testing.T) {
+	app := integrationApp(t)
+
+	code, _ := do(app, "GET", "/api/v1/trips/mine", "", "")
+	if code != 401 {
+		t.Errorf("/trips/mine sin token: esperaba 401, llegó %d", code)
+	}
 }
 
 func TestProtectedRoutesRequireToken(t *testing.T) {
