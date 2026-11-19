@@ -17,6 +17,10 @@
         android:icon="@android:drawable/ic_menu_recent_history"
         android:title="@string/history_title" />
     <item
+        android:id="@+id/trackingFragment"
+        android:icon="@android:drawable/ic_menu_mylocation"
+        android:title="@string/tracking_title" />
+    <item
         android:id="@+id/profileFragment"
         android:icon="@android:drawable/ic_menu_manage"
         android:title="@string/profile_title" />

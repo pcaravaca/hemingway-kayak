@@ -3,6 +3,15 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import {
+  MOON_LABELS,
+  bestTimeToFish,
+  favorabilityScore,
+  moonPhaseFor,
+  scoreLabel,
+  suggestedBaits,
+  suggestedTechniques
+} from '@/lib/fishingRules'
 
 // Las reglas son las mismas que usa la app Android (WeatherRepository.calculateFavorabilityScore),
 // así que la nota de "cuándo pescar" coincide en los dos lados.
@@ -29,111 +38,22 @@ const score = computed(() => {
   return favorabilityScore(weather.value, moonPhase.value)
 })
 
-const scoreLabel = computed(() => {
-  if (score.value === null) return ''
-  if (score.value >= 70) return 'Excelente para salir'
-  if (score.value >= 50) return 'Buenas condiciones'
-  if (score.value >= 35) return 'Regular, se puede'
-  return 'Mejor esperar'
-})
+const scoreLabelText = computed(() => (score.value === null ? '' : scoreLabel(score.value)))
 
 const techniques = computed(() => {
   if (!weather.value) return []
-  const list = []
-  if (weather.value.windSpeed > 8) list.push('Casting a sotavento')
-  if (weather.value.windSpeed < 3) list.push('Técnicas de superficie')
-  if ((weather.value.cloudCover || 0) > 80) list.push('Señuelos oscuros')
-  if ((weather.value.cloudCover || 0) < 30) list.push('Señuelos brillantes')
-  if (score.value > 70) list.push('Aguas superficiales', 'Cerca de vegetación')
-  if (score.value !== null && score.value < 40) list.push('Aguas profundas', 'Pesca lenta')
-  return list
+  return suggestedTechniques(weather.value, score.value)
 })
 
 const baits = computed(() => {
   if (!weather.value) return []
-  const list = []
-  if (weather.value.temperature < 15) list.push('Jigs')
-  if (weather.value.temperature > 25) list.push('Topwater')
-  if (score.value > 70) list.push('Crankbaits', 'Spinnerbaits')
-  if (score.value !== null && score.value < 40) list.push('Soft plastics', 'Carolina rig')
-  return list
+  return suggestedBaits(weather.value, score.value)
 })
 
 const bestTime = computed(() => {
   if (!weather.value) return null
-  const now = new Date()
-  const hour = now.getHours()
-
-  if (hour >= 18) {
-    const t = new Date(now)
-    t.setDate(t.getDate() + 1)
-    t.setHours(6, 0, 0, 0)
-    return t
-  }
-  if (moonPhase.value === 'FULL_MOON' || moonPhase.value === 'NEW_MOON') {
-    if (hour < 12) {
-      const t = new Date(now)
-      t.setHours(18, 0, 0, 0)
-      return t
-    }
-    const t = new Date(now)
-    t.setDate(t.getDate() + 1)
-    t.setHours(6, 0, 0, 0)
-    return t
-  }
-  if (hour < 6) return now
-  const t = new Date(now)
-  t.setHours(18, 0, 0, 0)
-  return t
+  return bestTimeToFish(new Date(), moonPhase.value)
 })
-
-const MOON_LABELS = {
-  NEW_MOON: 'Luna nueva',
-  WAXING_CRESCENT: 'Creciente',
-  FIRST_QUARTER: 'Cuarto creciente',
-  WAXING_GIBBOUS: 'Gibosa creciente',
-  FULL_MOON: 'Luna llena',
-  WANING_GIBBOUS: 'Gibosa menguante',
-  THIRD_QUARTER: 'Cuarto menguante',
-  WANING_CRESCENT: 'Menguante'
-}
-
-function moonPhaseFor(date) {
-  // Igual que la app: aproximada por día del mes.
-  const day = date.getDate()
-  const m = day % 28
-  if (m === 0) return 'NEW_MOON'
-  if (m <= 3) return 'WAXING_CRESCENT'
-  if (m <= 6) return 'FIRST_QUARTER'
-  if (m <= 13) return 'WAXING_GIBBOUS'
-  if (m === 14) return 'FULL_MOON'
-  if (m <= 20) return 'WANING_GIBBOUS'
-  if (m <= 24) return 'THIRD_QUARTER'
-  return 'WANING_CRESCENT'
-}
-
-function favorabilityScore(w, phase) {
-  let s = 50
-  const t = w.temperature
-  if (t >= 18 && t <= 24) s += 15
-  else if (t >= 15 && t <= 28) s += 10
-  else if (t >= 10 && t <= 30) s += 5
-  else if (t < 5 || t > 35) s -= 10
-
-  const wind = w.windSpeed ?? 0
-  if (wind < 2) s += 10
-  else if (wind <= 5) s += 5
-  else if (wind <= 10) s -= 5
-  else s -= 15
-
-  // Sin histórico de presión el backend no puede decir la tendencia: estable.
-  s += 10
-
-  if (phase === 'FULL_MOON' || phase === 'NEW_MOON') s += 15
-  else if (phase === 'FIRST_QUARTER' || phase === 'THIRD_QUARTER') s += 10
-
-  return Math.max(0, Math.min(100, s))
-}
 
 async function loadPlaces() {
   try {
@@ -217,7 +137,7 @@ onMounted(async () => {
       <div class="score-row">
         <div class="hemmingway-card score-card">
           <span class="score-number">{{ score }}</span>
-          <span class="score-label">{{ scoreLabel }}</span>
+          <span class="score-label">{{ scoreLabelText }}</span>
         </div>
         <div class="hemmingway-card moon-card">
           <span class="moon-phase">{{ MOON_LABELS[moonPhase] }}</span>

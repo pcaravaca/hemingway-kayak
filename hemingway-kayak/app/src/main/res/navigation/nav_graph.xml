@@ -99,6 +99,12 @@
         tools:layout="@layout/fragment_history" />
 
     <fragment
+        android:id="@+id/trackingFragment"
+        android:name="com.hemingway.kayak.ui.tracking.TrackingFragment"
+        android:label="@string/tracking_title"
+        tools:layout="@layout/fragment_tracking" />
+
+    <fragment
         android:id="@+id/profileFragment"
         android:name="com.hemingway.kayak.ui.profile.ProfileFragment"
         android:label="@string/profile_title"
