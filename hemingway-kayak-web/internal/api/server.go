@@ -31,6 +31,7 @@ type Server struct {
 	historyService  *services.HistoryService
 	speciesService  *services.SpeciesService
 	uploadService   *services.UploadService
+	weatherService  *services.WeatherService
 	wsHub           *ws.Hub
 	jwtSecret         []byte
 	revoked           *auth.Revocation
@@ -46,6 +47,7 @@ func NewServer(
 	historyService *services.HistoryService,
 	speciesService *services.SpeciesService,
 	uploadService *services.UploadService,
+	weatherService *services.WeatherService,
 ) *Server {
 	cfg := config.Load()
 	app := fiber.New(fiber.Config{
@@ -81,6 +83,7 @@ func NewServer(
 		historyService:    historyService,
 		speciesService:    speciesService,
 		uploadService:     uploadService,
+		weatherService:    weatherService,
 		wsHub:             hub,
 		jwtSecret:         []byte(cfg.JWTSecret),
 		revoked:           auth.NewRevocation(),
@@ -132,6 +135,7 @@ func (s *Server) setupRoutes() {
 	api.Get("/tournaments/:id/catches", s.tournamentService.GetCatches)
 	api.Get("/trips", s.tripService.GetTrips)
 	api.Get("/spots", s.tripService.GetSharedSpots)
+	api.Get("/weather", s.weatherService.GetWeather)
 	api.Get("/species", s.speciesService.GetSpecies)
 	api.Get("/species/:id", s.speciesService.GetSpeciesByID)
 

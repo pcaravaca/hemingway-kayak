@@ -63,6 +63,22 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/spots',
+    name: 'Spots',
+    component: () => import('@/views/SpotsView.vue')
+  },
+  {
+    path: '/clima',
+    name: 'Clima',
+    component: () => import('@/views/WeatherView.vue')
+  },
+  {
+    path: '/kayaks',
+    name: 'Kayaks',
+    component: () => import('@/views/KayaksView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/descargar',
     name: 'Download',
     component: () => import('@/views/DownloadView.vue')

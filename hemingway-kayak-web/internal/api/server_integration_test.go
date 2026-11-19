@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"bytes"
 	"io"
 	"log"
@@ -64,6 +65,7 @@ func integrationApp(t *testing.T) *fiber.App {
 		services.NewHistoryService(db),
 		services.NewSpeciesService(db),
 		services.NewUploadService(),
+		services.NewWeatherService(),
 	)
 	// NewServer sólo arma la app; las rutas se registran en Start(), que los tests
 	// no llaman porque usan app.Test directamente.
@@ -142,6 +144,27 @@ func TestPublicReadEndpoints(t *testing.T) {
 	_, body := do(app, "GET", "/api/v1/trips", "", "")
 	if strings.Contains(body, "startLat") || strings.Contains(body, "startLon") {
 		t.Error("el feed público de salidas está exponiendo coordenadas")
+	}
+
+	// La lista de torneos tiene que traer el conteo de participantes: el detalle
+	// muestra el ranking y la lista decía 0 siempre.
+	_, body = do(app, "GET", "/api/v1/tournaments", "", "")
+	var tournaments []map[string]interface{}
+	if err := json.Unmarshal([]byte(body), &tournaments); err != nil {
+		t.Fatalf("/tournaments no es JSON: %v", err)
+	}
+	if len(tournaments) == 0 {
+		t.Fatal("/tournaments no devolvió ningún torneo")
+	}
+	for _, t0 := range tournaments {
+		count, ok := t0["participantsCount"].(float64)
+		if !ok {
+			t.Errorf("%s: participantsCount ausente o no numérico (%T)", t0["name"], t0["participantsCount"])
+			continue
+		}
+		if count < 0 {
+			t.Errorf("%s: participantsCount negativo", t0["name"])
+		}
 	}
 }
 

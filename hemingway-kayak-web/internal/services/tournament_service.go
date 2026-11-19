@@ -107,7 +107,8 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 	query := `SELECT CAST(t.id AS VARCHAR(36)), CAST(t.organizer_id AS VARCHAR(36)), t.name, t.description, t.start_time, t.end_time,
 	          t.location_name, t.start_lat, t.start_lon, t.status, t.tournamenttype,
 	          t.max_participants, t.created_at,
-	          u.username as organizer_username
+	          u.username as organizer_username,
+	          (SELECT COUNT(*) FROM tournament_participants WHERE tournament_id = t.id) as participant_count
 	          FROM tournaments t
 	          JOIN users u ON t.organizer_id = u.id WHERE 1=1`
 
@@ -130,11 +131,11 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 		var organizerUsername sql.NullString
 		var startTime, endTime, createdAt sql.NullTime
 		var startLat, startLon sql.NullFloat64
-		var maxParticipants sql.NullInt64
+		var maxParticipants, participantCount sql.NullInt64
 
 		if err := rows.Scan(&id, &organizerID, &name, &description, &startTime, &endTime,
 			&locationName, &startLat, &startLon, &status, &tournamentType,
-			&maxParticipants, &createdAt, &organizerUsername); err != nil {
+			&maxParticipants, &createdAt, &organizerUsername, &participantCount); err != nil {
 			continue
 		}
 
@@ -178,6 +179,9 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 		}
 		if organizerUsername.Valid {
 			t["organizerUsername"] = organizerUsername.String
+		}
+		if participantCount.Valid {
+			t["participantsCount"] = participantCount.Int64
 		}
 		tournaments = append(tournaments, t)
 	}

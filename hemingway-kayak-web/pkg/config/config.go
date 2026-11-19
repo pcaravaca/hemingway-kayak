@@ -23,6 +23,8 @@ type Config struct {
 	RedisPassword string
 	Port          string
 	CORSOrigins   string
+	// OpenWeatherAPIKey es opcional: sin ella /weather responde 503.
+	OpenWeatherAPIKey string
 }
 
 // Load lee la configuración del entorno. Los valores por defecto son los de un
@@ -42,6 +44,7 @@ func Load() *Config {
 		RedisPassword: os.Getenv("REDIS_PASSWORD"),
 		Port:          getenv("PORT", "8080"),
 		CORSOrigins:   getenv("CORS_ORIGINS", "http://localhost:5173"),
+		OpenWeatherAPIKey: os.Getenv("OPENWEATHER_API_KEY"),
 	}
 }
 
