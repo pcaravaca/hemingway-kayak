@@ -8,7 +8,9 @@ Web companion app for Hemingway Kayak Android app.
 - **Live Tracking**: Follow kayakers in real-time (with permission)
 - **Tournaments**: Live rankings, locations, catches
 - **History**: View past trips, tournaments, catches
-- **Trip Planning**: Plan fishing trips
+- **Trip Planning**: Crear salidas (`/salidas/nueva`)
+- **Spots**: Mapa de spots compartidos y alta de spots
+- **Kayaks**: ABMC de kayaks (`/kayaks/`)
 
 ### Tech Stack
 - **Backend**: Go 1.25 con Fiber v2
@@ -581,12 +583,15 @@ curl http://localhost:8080/api/v1/tracking/followers
 
 ## TODO
 
-- [ ] Redis for WebSocket pub/sub scaling
-- [ ] JWT middleware for protected routes
-- [ ] File upload for catch photos
-- [ ] Push notifications
-- [ ] Real-time tournament updates via WebSocket
-- [ ] Tournament catch submission API
-- [ ] Photo upload for catches
-- [ ] Connect Android app to web backend
-- [ ] Real password hashing verification
+- [ ] Redis para escalar el pub/sub de WebSocket
+- [ ] Push notifications (bloqueado: falta la clave de Firebase)
+- [ ] Editar la salida propia desde `/trips/:id` (hoy es de sólo lectura)
+
+### Hecho — no volver a listarlo
+
+- [x] JWT middleware para las rutas protegidas
+- [x] Subida de fotos de captura (`POST /api/v1/uploads`, valida contenido y 8 MB)
+- [x] Ranking de torneo en vivo por WebSocket (`broadcastRanking`)
+- [x] API de capturas de torneo
+- [x] App Android conectada al backend
+- [x] Hash de contraseñas con bcrypt (`GenerateFromPassword` / `CompareHashAndPassword`)

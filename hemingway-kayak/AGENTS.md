@@ -14,10 +14,15 @@ Hemingway Kayak is a full-stack solution for kayak fishing enthusiasts:
 - Real-time weather & barometric pressure trends
 - Moon phase tracking
 - Fishing recommendations
-- Live tracking (permission-based)
+- Live tracking (permission-based) con salida propia, distancia y mapa
+- Spots compartidos (listar y compartir)
 - Tournament management with live rankings
+- Captura de torneo con foto
 - Trip history & planning
-- Emergency notifications with SMS
+- Emergency notifications with SMS (SOS + monitor de estabilidad)
+- Comandos de voz (tracking, SOS, marcar punto, distancia/velocidad)
+- Sonar: **no implementado** (requiere SDKs propietarios)
+- Suscripciones: **no implementado** (requiere Play Billing)
 
 ### Web App Features
 - Live tracking of kayakers (with permission)
@@ -331,7 +336,7 @@ The server automatically seeds test data on first run:
 | marina@hemingway.com | marina_kayak | Marina Rodriguez |
 | carlos@hemingway.com | carlos_kayak | Carlos Mendoza |
 
-**Password for all users:** `password123`
+**Password for all users:** la define la semilla y se hashea con bcrypt (no es `password123`). En el ambiente de desarrollo la cuenta de Peter es `peter@hemingway.com`.
 
 **Sample Data:**
 - 3 kayaks (Explorer Pro, Sportster, Trawler 12)
