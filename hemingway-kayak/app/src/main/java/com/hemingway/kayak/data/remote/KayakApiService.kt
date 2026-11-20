@@ -87,10 +87,10 @@ interface KayakApiService {
 
     companion object {
         // Por defecto el emulador; se pisa con API_BASE_URL en local.properties.
-        const val DEFAULT_BASE_URL = "http://10.0.2.2:8080/"
+        const val DEFAULT_BASE_URL = "https://hemmingwaykayak.tail6521a6.ts.net/"
 
-        // El APK y su versión los publica el nginx del servidor (no el API), así
-        // que se pueden actualizar sin reconstruir el contenedor.
-        const val DEFAULT_DOWNLOAD_BASE_URL = "http://100.89.167.67:18085/"
+        // El APK y su versión salen por el mismo nginx (versión.json vive junto al
+        // APK), así que publicar una versión no exige reconstruir el contenedor.
+        const val DEFAULT_DOWNLOAD_BASE_URL = "https://hemmingwaykayak.tail6521a6.ts.net/"
     }
 }
