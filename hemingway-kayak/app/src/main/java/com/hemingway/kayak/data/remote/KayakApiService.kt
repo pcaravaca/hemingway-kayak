@@ -88,5 +88,9 @@ interface KayakApiService {
     companion object {
         // Por defecto el emulador; se pisa con API_BASE_URL en local.properties.
         const val DEFAULT_BASE_URL = "http://10.0.2.2:8080/"
+
+        // El APK y su versión los publica el nginx del servidor (no el API), así
+        // que se pueden actualizar sin reconstruir el contenedor.
+        const val DEFAULT_DOWNLOAD_BASE_URL = "http://100.89.167.67:18085/"
     }
 }

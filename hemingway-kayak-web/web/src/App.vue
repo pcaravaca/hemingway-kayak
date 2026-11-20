@@ -33,6 +33,8 @@
       <router-view />
     </main>
 
+    <app-install-banner />
+
     <footer class="foot">
       <span>HEMINGWAY KAYAK · COSTA RICA</span>
       <span>9.9382° N — 84.8371° W</span>
@@ -44,6 +46,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppInstallBanner from '@/components/AppInstallBanner.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()

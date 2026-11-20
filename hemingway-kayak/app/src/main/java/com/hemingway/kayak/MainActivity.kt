@@ -3,12 +3,15 @@ package com.hemingway.kayak
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.hemingway.kayak.R
 import com.hemingway.kayak.data.UserPreferencesManager
+import com.hemingway.kayak.data.remote.AppUpdateManager
 import com.hemingway.kayak.data.remote.AuthRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -24,12 +27,57 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var authRepository: AuthRepository
 
+    @Inject
+    lateinit var appUpdateManager: AppUpdateManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         loadUserPreferences()
         applyStartDestination()
+        appUpdateManager.checkForUpdate()
+        observeUpdates()
+    }
+
+    /**
+     * Avisa si el servidor publica un versionCode más nuevo que el instalado.
+     * Si el usuario lo descarta, no vuelve a insistir en la misma sesión.
+     */
+    private fun observeUpdates() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appUpdateManager.update.collect { info ->
+                    if (info != null) showUpdateDialog(info)
+                }
+            }
+        }
+    }
+
+    private fun showUpdateDialog(info: AppUpdateManager.UpdateInfo) {
+        val message = "Hay una versión nueva de Hemingway Kayak (${info.versionName})." +
+            (info.releaseNotes?.let { "\n\n$it" } ?: "")
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Versión nueva disponible")
+            .setMessage(message)
+            .setPositiveButton("Descargar") { _, _ ->
+                try {
+                    startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse(info.apkUrl)
+                        )
+                    )
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(
+                        this, "No se pudo abrir la descarga", android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                appUpdateManager.dismiss()
+            }
+            .setNegativeButton("Más tarde") { _, _ -> appUpdateManager.dismiss() }
+            .setOnCancelListener { appUpdateManager.dismiss() }
+            .show()
     }
 
     /**

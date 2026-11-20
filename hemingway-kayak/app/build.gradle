@@ -18,8 +18,8 @@ android {
         applicationId "com.hemingway.kayak"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
         buildConfigField "String", "WEATHER_API_KEY", "\"${localProperties.getProperty('WEATHER_API_KEY', 'YOUR_OPENWEATHERMAP_API_KEY')}\""
         // Backend de Hemingway Kayak. Por defecto el server (Tailscale) para que la
         // app funcione de una en el teléfono; el emulador se pisa en local.properties
