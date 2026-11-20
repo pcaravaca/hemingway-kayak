@@ -22,7 +22,7 @@ func NewTripService(db *sql.DB) *TripService {
 // tripQuery arma el SELECT de salidas con los filtros de querystring. Si
 // forcedUserID no está vacío, se fuerza el dueño (para la lista de "mis salidas").
 func (s *TripService) tripQuery(c *fiber.Ctx, forcedUserID string) (string, []interface{}) {
-	query := `SELECT CAST(id AS VARCHAR(36)), CAST(user_id AS VARCHAR(36)), title, description, triptype, status, start_time, end_time,
+	query := `SELECT CAST(id AS VARCHAR(36)), CAST(user_id AS VARCHAR(36)), title, description, triptype, UPPER(status), start_time, end_time,
 	          start_lat, start_lon, end_lat, end_lon, distance, created_at
 	          FROM trips WHERE 1=1`
 	var args []interface{}
@@ -204,7 +204,7 @@ func (s *TripService) GetTrip(c *fiber.Ctx) error {
 	}
 
 	err := s.db.QueryRowContext(context.Background(),
-		`SELECT id, user_id, title, description, triptype, status, start_time, end_time,
+		`SELECT id, user_id, title, description, triptype, UPPER(status), start_time, end_time,
 		 start_lat, start_lon, end_lat, end_lon, distance, created_at 
 		 FROM trips WHERE id = $1`,
 		id,
@@ -256,7 +256,7 @@ func (s *TripService) CreateTrip(c *fiber.Ctx) error {
 	var id string
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO trips (user_id, title, description, triptype, start_lat, start_lon, status, start_time)
-		 VALUES ($1, $2, $3, $4, $5, $6, 'planned', now())
+		 VALUES ($1, $2, $3, $4, $5, $6, 'PLANNED', now())
 		 RETURNING id::text`,
 		input.UserID,
 		input.Title,
@@ -279,6 +279,7 @@ func (s *TripService) UpdateTrip(c *fiber.Ctx) error {
 	type UpdateInput struct {
 		Title       *string  `json:"title"`
 		Description *string  `json:"description"`
+		Type        *string  `json:"type"`
 		Status      *string  `json:"status"`
 		EndLat      *float64 `json:"endLat"`
 		EndLon      *float64 `json:"endLon"`
@@ -293,16 +294,18 @@ func (s *TripService) UpdateTrip(c *fiber.Ctx) error {
 	query := `UPDATE trips SET 
 		title = COALESCE($1, title),
 		description = COALESCE($2, description),
-		status = COALESCE($3, status),
-		end_lat = COALESCE($4, end_lat),
-		end_lon = COALESCE($5, end_lon),
-		distance = COALESCE($6, distance),
-		end_time = CASE WHEN $3 IN ('completed', 'cancelled') THEN now() ELSE end_time END
-		WHERE id = $7`
+		triptype = COALESCE($3, triptype),
+		status = COALESCE($4, status),
+		end_lat = COALESCE($5, end_lat),
+		end_lon = COALESCE($6, end_lon),
+		distance = COALESCE($7, distance),
+		end_time = CASE WHEN UPPER($4) IN ('COMPLETED', 'CANCELLED') THEN now() ELSE end_time END
+		WHERE id = $8`
 
 	_, err := s.db.ExecContext(context.Background(), query,
 		input.Title,
 		input.Description,
+		input.Type,
 		input.Status,
 		input.EndLat,
 		input.EndLon,
@@ -319,6 +322,14 @@ func (s *TripService) UpdateTrip(c *fiber.Ctx) error {
 
 func (s *TripService) DeleteTrip(c *fiber.Ctx) error {
 	id := c.Params("id")
+
+	// trip_points tiene FK a trips sin ON DELETE CASCADE: sin esto el DELETE
+	// falla en cuanto la salida tiene un solo punto.
+	if _, err := s.db.ExecContext(context.Background(),
+		"DELETE FROM trip_points WHERE trip_id = $1", id,
+	); err != nil {
+		return c.Status(500).JSON(Error("Failed to delete trip points"))
+	}
 
 	_, err := s.db.ExecContext(context.Background(),
 		"DELETE FROM trips WHERE id = $1",

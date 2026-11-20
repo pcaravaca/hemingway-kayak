@@ -17,7 +17,64 @@
             <span class="badge">{{ typeLabel }}</span>
           </div>
         </div>
+        <div class="head-actions">
+          <button class="hemmingway-btn hemmingway-btn-ghost" @click="startEdit">Editar</button>
+          <button class="hemmingway-btn hemmingway-btn-danger" @click="confirmDelete">Eliminar</button>
+        </div>
       </header>
+
+      <section v-if="editing" class="panel">
+        <div class="panel-head"><h3>Editar salida</h3></div>
+        <label class="field">
+          <span>Título</span>
+          <input v-model="form.title" class="hemmingway-input" />
+        </label>
+        <label class="field">
+          <span>Descripción</span>
+          <textarea v-model="form.description" class="hemmingway-input" rows="3" />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Tipo</span>
+            <select v-model="form.type" class="hemmingway-input">
+              <option v-for="t in TYPES" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Estado</span>
+            <select v-model="form.status" class="hemmingway-input">
+              <option v-for="s in STATUSES" :key="s" :value="s">{{ statusLabelFor(s) }}</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="hemmingway-btn hemmingway-btn-ghost" @click="editing = false">Cancelar</button>
+          <button class="hemmingway-btn hemmingway-btn-primary" :disabled="saving" @click="save">
+            {{ saving ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+        <p v-if="editError" class="form-error">{{ editError }}</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3>Agregar punto</h3></div>
+        <div class="field-row">
+          <label class="field">
+            <span>Latitud</span>
+            <input v-model="pointForm.latitude" type="number" step="any" class="hemmingway-input" placeholder="9.9382" />
+          </label>
+          <label class="field">
+            <span>Longitud</span>
+            <input v-model="pointForm.longitude" type="number" step="any" class="hemmingway-input" placeholder="-84.8371" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="hemmingway-btn hemmingway-btn-primary" :disabled="addingPoint" @click="addPoint">
+            {{ addingPoint ? 'Agregando…' : 'Agregar punto' }}
+          </button>
+        </div>
+        <p v-if="pointError" class="form-error">{{ pointError }}</p>
+      </section>
 
       <div class="kpis">
         <div class="kpi">
@@ -76,18 +133,114 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const route = useRoute()
+const router = useRouter()
 const loading = ref(true)
 const error = ref(null)
 const trip = ref(null)
 const points = ref([])
 const mapContainer = ref(null)
 let map = null
+
+const TYPES = ['FISHING', 'CAMPING', 'TOUR', 'RACING']
+const STATUSES = ['PLANNED', 'LIVE', 'COMPLETED', 'CANCELLED']
+
+const editing = ref(false)
+const saving = ref(false)
+const editError = ref(null)
+const form = ref({ title: '', description: '', type: 'FISHING', status: 'PLANNED' })
+
+const addingPoint = ref(false)
+const pointError = ref(null)
+const pointForm = ref({ latitude: '', longitude: '' })
+
+function statusLabelFor(status) {
+  return ({
+    LIVE: 'EN VIVO',
+    COMPLETED: 'COMPLETADA',
+    PLANNED: 'PLANIFICADA',
+    CANCELLED: 'CANCELADA'
+  }[status] || status)
+}
+
+function startEdit() {
+  editError.value = null
+  form.value = {
+    title: trip.value?.title || '',
+    description: trip.value?.description || '',
+    type: trip.value?.type || 'FISHING',
+    status: trip.value?.status || 'PLANNED'
+  }
+  editing.value = true
+}
+
+async function save() {
+  editError.value = null
+  if (!form.value.title.trim()) {
+    editError.value = 'El título es obligatorio'
+    return
+  }
+  saving.value = true
+  try {
+    await axios.put(`/api/v1/trips/${route.params.id}`, {
+      title: form.value.title.trim(),
+      description: form.value.description,
+      type: form.value.type,
+      status: form.value.status
+    })
+    editing.value = false
+    await load()
+  } catch (e) {
+    editError.value = e.response?.data?.error || 'No se pudo guardar la salida'
+  } finally {
+    saving.value = false
+  }
+}
+
+function confirmDelete() {
+  if (!window.confirm('¿Eliminar esta salida? También se borran sus puntos.')) return
+  remove()
+}
+
+async function remove() {
+  try {
+    await axios.delete(`/api/v1/trips/${route.params.id}`)
+    router.replace('/history')
+  } catch (e) {
+    error.value = e.response?.data?.error || 'No se pudo eliminar la salida'
+  }
+}
+
+async function addPoint() {
+  pointError.value = null
+  const lat = Number(pointForm.value.latitude)
+  const lon = Number(pointForm.value.longitude)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    pointError.value = 'Faltan las coordenadas'
+    return
+  }
+  addingPoint.value = true
+  try {
+    await axios.post(`/api/v1/trips/${route.params.id}/points`, {
+      latitude: lat,
+      longitude: lon,
+      altitude: 0,
+      speed: 0,
+      heading: 0
+    })
+    pointForm.value = { latitude: '', longitude: '' }
+    await load()
+  } catch (e) {
+    pointError.value = e.response?.data?.error || 'No se pudo agregar el punto'
+  } finally {
+    addingPoint.value = false
+  }
+}
 
 const distanceLabel = computed(() => {
   const d = Number(trip.value?.distance) || 0
@@ -226,8 +379,61 @@ function formatTime(value) {
 .back:hover { color: var(--hemmingway-blue); }
 
 .trip-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
   padding-bottom: 28px;
   border-bottom: 1px solid var(--hemmingway-line);
+}
+
+.head-actions {
+  display: flex;
+  gap: 10px;
+  flex: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.field > span {
+  font-family: var(--hemmingway-font-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--hemmingway-text-muted);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.form-error {
+  margin: 12px 0 0;
+  color: var(--hemmingway-accent-error, #ff8a80);
+  font-size: 14px;
+}
+
+.hemmingway-btn-danger {
+  background: #E53935;
+  color: #fff;
+  border: 1px solid #E53935;
+}
+
+.hemmingway-btn-danger:hover {
+  background: #c62828;
 }
 
 .trip-head h1 {
@@ -356,6 +562,7 @@ function formatTime(value) {
 
 @media (max-width: 900px) {
   .trip { padding: 28px 0 24px; }
+  .trip-head { flex-direction: column; }
   .trip-head h1 { font-size: 30px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
 }

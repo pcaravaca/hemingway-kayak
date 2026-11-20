@@ -84,7 +84,7 @@ func (s *HistoryService) GetTripHistory(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 
 	rows, err := s.db.QueryContext(context.Background(),
-		`SELECT t.id, t.user_id, t.title, t.triptype, t.status, t.start_time, t.end_time, 
+		`SELECT t.id, t.user_id, t.title, t.triptype, UPPER(t.status), t.start_time, t.end_time, 
 	        t.distance, t.created_at, t.start_lat, t.start_lon,
 	        (SELECT COUNT(*) FROM trip_points WHERE trip_id = t.id) as point_count
 	 	FROM trips t
