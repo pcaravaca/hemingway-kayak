@@ -42,27 +42,40 @@ class TrackingUploader @Inject constructor(
     private var lastLocation: Location? = null
     private var distanceMeters = 0f
 
+    /** true mientras la salida no existe y debe crearse con el primer punto real. */
+    private var tripPending = false
+
     fun start(tripId: String? = null) {
         lastLocation = null
         distanceMeters = 0f
         _distanceKm.value = 0.0
         _tripId.value = tripId
+        tripPending = tripId == null
 
         tracker.onLocation = { location ->
             lastLocation?.let { distanceMeters += it.distanceTo(location) }
             lastLocation = location
             _distanceKm.value = distanceMeters.toDouble() / 1000.0
-            scope.launch { tracking.point(location) }
+            if (tripPending) {
+                // La salida se crea con el primer fix real: al arrancar, el GPS todavía
+                // no tiene posición y la salida quedaba con el start en (0, 0).
+                tripPending = false
+                scope.launch {
+                    val id = trips.createLiveTrip(location.latitude, location.longitude)
+                    _tripId.value = id
+                    tracking.start(id, location)
+                }
+            } else {
+                scope.launch { tracking.point(location) }
+            }
         }
         tracker.startTracking()
         _isTracking.value = true
 
-        scope.launch {
+        // Si ya trajeron un tripId (salida creada desde la web), se abre igual.
+        if (!tripPending) {
             val start = tracker.lastKnownLocation.value
-            // Si no trajeron un tripId, la salida la crea la app: el tracking tiene que
-            // quedar siempre asociado a una salida.
-            _tripId.value = tripId ?: trips.createLiveTrip(start?.latitude, start?.longitude)
-            tracking.start(_tripId.value, start)
+            scope.launch { tracking.start(tripId, start) }
         }
     }
 

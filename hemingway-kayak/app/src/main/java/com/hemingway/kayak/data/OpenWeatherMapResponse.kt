@@ -17,7 +17,9 @@ data class OpenWeatherMapResponse(
     val rain: Rain?,
     val snow: Snow?,
     @Json(name = "dt") val timestamp: Long,
-    val sys: Sys,
+    // OWM solo incluye "sys" en algunas respuestas; por lat/lon viene sin
+    // type/id (esos solo aparecen al buscar por nombre de ciudad).
+    val sys: Sys? = null,
     @Json(name = "id") val cityId: Long,
     @Json(name = "name") val cityName: String,
     @Json(name = "cod") val responseCode: Int
@@ -98,9 +100,9 @@ data class Snow(
 
 @JsonClass(generateAdapter = true)
 data class Sys(
-    val type: Int,
-    val id: Int,
-    val country: String,
-    val sunrise: Long,
-    val sunset: Long
+    val type: Int? = null,
+    val id: Int? = null,
+    val country: String? = null,
+    val sunrise: Long? = null,
+    val sunset: Long? = null
 )

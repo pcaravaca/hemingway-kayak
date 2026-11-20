@@ -63,7 +63,7 @@ class HistoryFragment : Fragment() {
             row.metaText.text = listOfNotNull(
                 trip.type,
                 trip.startTime?.take(10),
-                trip.distance?.let { if (it > 0) "$it km" else null }
+                trip.distance?.let { if (it > 0) String.format("%.2f km", it) else null }
             ).joinToString(" · ")
             row.descriptionText.text = trip.description.orEmpty()
             container.addView(row.root)

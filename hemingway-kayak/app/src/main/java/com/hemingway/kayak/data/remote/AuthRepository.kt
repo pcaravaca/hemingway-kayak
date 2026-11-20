@@ -24,7 +24,7 @@ class AuthRepository @Inject constructor(
     suspend fun register(name: String, email: String, password: String): String? = try {
         val response = client.api.register(
             RegisterRequest(
-                name = name,
+                displayName = name,
                 email = email.trim().lowercase(),
                 username = email.substringBefore("@"),
                 password = password
