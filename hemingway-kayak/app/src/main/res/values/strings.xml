@@ -79,6 +79,11 @@
     <string name="settings_offline_maps">Mapas sin conexión</string>
     <string name="settings_fishing_spots">Mostrar lugares de pesca</string>
     <string name="settings_track_route">Seguir ruta</string>
+    <string name="settings_security">Seguridad</string>
+    <string name="settings_emergency_phone">Teléfono de emergencia</string>
+    <string name="settings_emergency_email">Email de emergencia</string>
+    <string name="settings_save_contact">Guardar contacto</string>
+    <string name="settings_contact_saved">Contacto guardado</string>
     <string name="settings_account">Cuenta</string>
     <string name="settings_community">Comunidad</string>
     

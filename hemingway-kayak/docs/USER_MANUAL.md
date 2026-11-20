@@ -1,5 +1,22 @@
 # Manual de Usuario - Hemingway Kayak / User Manual - Hemingway Kayak
 
+> **Estado de implementación (2026-11-19).** Lo que este manual describe como
+> existente está implementado, salvo lo marcado:
+>
+> - **Voz (sección 3):** implementada en la pantalla de Tracking. Comandos reales:
+>   iniciar/detener tracking, SOS, marcar punto de pesca, distancia y velocidad.
+>   Los comandos de clima/pesca de la sección 3 responden "todavía no hace nada".
+> - **Seguridad (sección 7):** implementada. Botón SOS en Tracking + contacto de
+>   emergencia en Ajustes → Seguridad (guarda teléfono y email). Al dispararla pide
+>   el permiso de SMS y abre el 911. El monitor de estabilidad usa los sensores y
+>   dispara la alerta si detecta vuelco.
+> - **Sonar (sección 8):** **no implementado.** Requiere los SDK propietarios de
+>   Garmin/Deeper/ReelSonar y cuentas de desarrollador.
+> - **Suscripciones (sección 9):** **no implementado.** Requiere Play Billing y una
+>   cuenta de developer de Google Play.
+> - **Buscar lugares (sección 10):** cubierto por la pantalla **Spots**, que lista y
+>   comparte spots desde el backend. No usa la API de Places de Google.
+
 ## Español
 
 ### 1. Introducción

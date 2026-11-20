@@ -42,6 +42,15 @@
             android:textColor="@color/white"
             android:textSize="13sp" />
 
+        <TextView
+            android:id="@+id/stabilityText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Estable"
+            android:textColor="#8BA3BD"
+            android:textSize="13sp" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/toggleButton"
             android:layout_width="match_parent"
@@ -50,6 +59,36 @@
             android:backgroundTint="@color/logo_turquoise"
             android:text="Iniciar tracking"
             android:textColor="@color/logo_dark" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/voiceButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Voz"
+                android:textColor="@color/logo_turquoise"
+                app:icon="@android:drawable/ic_btn_speak_now"
+                app:iconGravity="start"
+                app:iconTint="@color/logo_turquoise"
+                app:strokeColor="@color/logo_turquoise" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sosButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#E53935"
+                android:text="SOS"
+                android:textColor="@color/white" />
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

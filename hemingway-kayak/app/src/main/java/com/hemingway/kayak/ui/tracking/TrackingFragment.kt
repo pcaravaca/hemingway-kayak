@@ -13,9 +13,18 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.hemingway.kayak.data.UserPreferencesManager
+import com.hemingway.kayak.data.remote.SpotRepository
 import com.hemingway.kayak.data.remote.TrackingUploader
 import com.hemingway.kayak.databinding.FragmentTrackingBinding
+import com.hemingway.kayak.emergency.EmergencyNotifier
+import com.hemingway.kayak.sensors.EmergencyType
+import com.hemingway.kayak.sensors.StabilityMonitor
+import com.hemingway.kayak.voice.VoiceCommand
+import com.hemingway.kayak.voice.VoiceCommandListener
+import com.hemingway.kayak.voice.VoiceCommandManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -33,6 +42,20 @@ class TrackingFragment : Fragment() {
     @Inject
     lateinit var trackingUploader: TrackingUploader
 
+    @Inject
+    lateinit var userPreferencesManager: UserPreferencesManager
+
+    @Inject
+    lateinit var spotRepository: SpotRepository
+
+    private val emergencyNotifier by lazy { EmergencyNotifier.create(requireContext()) }
+    private val stabilityMonitor by lazy {
+        StabilityMonitor(requireContext()).apply { setEmergencyNotifier(emergencyNotifier) }
+    }
+    private var voiceManager: VoiceCommandManager? = null
+
+    private var pendingSmsInfo: EmergencyNotifier.EmergencyInfo? = null
+
     private lateinit var mapView: org.osmdroid.views.MapView
     private val route = Polyline()
     private var lastMarker: Marker? = null
@@ -45,6 +68,16 @@ class TrackingFragment : Fragment() {
             result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         ) {
             start()
+        }
+    }
+
+    private val smsPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val info = pendingSmsInfo
+        pendingSmsInfo = null
+        if (granted && info != null) {
+            sendSms(info)
         }
     }
 
@@ -73,10 +106,16 @@ class TrackingFragment : Fragment() {
         binding.toggleButton.setOnClickListener {
             if (trackingUploader.isTracking.value) {
                 trackingUploader.stop()
+                stabilityMonitor.stopMonitoring()
             } else {
                 requestOrStart()
             }
         }
+
+        binding.sosButton.setOnClickListener { confirmSos() }
+        binding.voiceButton.setOnClickListener { toggleVoice() }
+
+        setupVoice()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -117,7 +156,153 @@ class TrackingFragment : Fragment() {
 
     private fun start() {
         trackingUploader.start()
+        stabilityMonitor.startMonitoring()
         observeLocations()
+        observeStability()
+    }
+
+    private fun observeStability() {
+        stabilityMonitor.stability.observe(viewLifecycleOwner) { status ->
+            binding.stabilityText.text = when (status) {
+                StabilityMonitor.StabilityStatus.STABLE -> "Estable"
+                StabilityMonitor.StabilityStatus.WARNING -> "Precaución · inclinación alta"
+                StabilityMonitor.StabilityStatus.DANGER -> "Peligro · casi volcado"
+                StabilityMonitor.StabilityStatus.CAPSIZED -> "Volcado · alerta enviada"
+                StabilityMonitor.StabilityStatus.SUBMERGED -> "Sumergido · alerta enviada"
+                null -> "Estable"
+            }
+        }
+    }
+
+    private fun confirmSos() {
+        val location = trackingUploader.locations.value
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Alerta de emergencia")
+            .setMessage(
+                "Se manda un SMS a tu contacto de emergencia con tu ubicación" +
+                    (location?.let { " (${it.latitude}, ${it.longitude})" } ?: " (sin ubicación)") +
+                    " y se abre el 911."
+            )
+            .setPositiveButton("Enviar y llamar") { _, _ -> sendSos() }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun sendSos() {
+        val location = trackingUploader.locations.value
+        val info = EmergencyNotifier.EmergencyInfo(
+            latitude = location?.latitude ?: 0.0,
+            longitude = location?.longitude ?: 0.0,
+            timestamp = System.currentTimeMillis(),
+            type = EmergencyType.MEDICAL_EMERGENCY.name,
+            customMessage = "Alerta manual desde Hemingway Kayak"
+        )
+        viewLifecycleOwner.lifecycleScope.launch {
+            val prefs = userPreferencesManager.userPreferencesFlow.first()
+            if (prefs.emergencyPhone.isNotBlank()) {
+                val granted = ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.SEND_SMS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    sendSms(info)
+                } else {
+                    pendingSmsInfo = info
+                    smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+                }
+            } else {
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "No hay contacto de emergencia cargado (Ajustes → Seguridad)",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+            emergencyNotifier.call911()
+        }
+    }
+
+    private fun sendSms(info: EmergencyNotifier.EmergencyInfo) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val prefs = userPreferencesManager.userPreferencesFlow.first()
+            emergencyNotifier.sendSmsAlert(info, listOf(prefs.emergencyPhone))
+        }
+    }
+
+    // --- Voz / Voice ---
+
+    private fun setupVoice() {
+        voiceManager = VoiceCommandManager(requireActivity()).apply {
+            listener = object : VoiceCommandListener {
+                override fun onCommandReceived(command: VoiceCommand) {
+                    binding.statusText.text = "Comando: ${command.name}"
+                    executeVoiceCommand(command)
+                }
+
+                override fun onListeningStarted() {
+                    binding.voiceButton.text = "Escuchando…"
+                }
+
+                override fun onListeningStopped() {
+                    binding.voiceButton.text = "Voz"
+                }
+
+                override fun onError(error: String) {
+                    binding.voiceButton.text = "Voz"
+                    binding.statusText.text = "No te entendí"
+                }
+            }
+        }
+        voiceManager?.initialize()
+    }
+
+    private fun toggleVoice() {
+        val manager = voiceManager ?: return
+        if (manager.isListening.value == true) {
+            manager.stopListening()
+        } else {
+            manager.startListening()
+        }
+    }
+
+    private fun executeVoiceCommand(command: VoiceCommand) {
+        when (command) {
+            VoiceCommand.START_TRACKING, VoiceCommand.START_NAVIGATION -> {
+                if (!trackingUploader.isTracking.value) requestOrStart()
+            }
+            VoiceCommand.STOP_TRACKING, VoiceCommand.STOP_NAVIGATION -> {
+                if (trackingUploader.isTracking.value) {
+                    trackingUploader.stop()
+                    stabilityMonitor.stopMonitoring()
+                }
+            }
+            VoiceCommand.EMERGENCY_SOS -> confirmSos()
+            VoiceCommand.MARK_FISHING_SPOT -> saveCurrentSpot()
+            VoiceCommand.CHECK_DISTANCE -> binding.statusText.text =
+                String.format("Distancia: %.2f km", trackingUploader.distanceKm.value)
+            VoiceCommand.CHECK_SPEED -> {
+                val speed = trackingUploader.locations.value?.speed ?: 0f
+                binding.statusText.text = String.format("Velocidad: %.1f m/s", speed)
+            }
+            else -> binding.statusText.text = "Ese comando todavía no hace nada"
+        }
+    }
+
+    private fun saveCurrentSpot() {
+        val location = trackingUploader.locations.value
+        if (location == null) {
+            binding.statusText.text = "Todavía no hay ubicación"
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val ok = spotRepository.create(
+                name = "Punto marcado por voz",
+                description = null,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                rating = 0
+            )
+            binding.statusText.text = if (ok) "Punto compartido" else "No se pudo compartir"
+        }
     }
 
     private fun observeLocations() {
@@ -157,6 +342,8 @@ class TrackingFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        voiceManager?.destroy()
+        voiceManager = null
         _binding = null
     }
 }

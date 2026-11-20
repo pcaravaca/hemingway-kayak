@@ -51,4 +51,10 @@ class SettingsViewModel @Inject constructor(
             userPreferencesManager.updateTrackRoute(track)
         }
     }
+
+    fun saveEmergencyContact(phone: String, email: String) {
+        viewModelScope.launch {
+            userPreferencesManager.updateEmergencyContact(phone.trim(), email.trim())
+        }
+    }
 }

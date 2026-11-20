@@ -59,6 +59,10 @@ class UserPreferencesManager @Inject constructor(
         val SHOW_FISHING_SPOTS = booleanPreferencesKey("show_fishing_spots")
         val TRACK_ROUTE = booleanPreferencesKey("track_route")
         val ENABLE_OFFLINE_MAPS = booleanPreferencesKey("enable_offline_maps")
+
+        // Contacto de emergencia / Emergency contact
+        val EMERGENCY_PHONE = stringPreferencesKey("emergency_phone")
+        val EMERGENCY_EMAIL = stringPreferencesKey("emergency_email")
     }
 
     /**
@@ -89,7 +93,11 @@ class UserPreferencesManager @Inject constructor(
         val defaultMapZoom: Float = 14f,
         val showFishingSpots: Boolean = true,
         val trackRoute: Boolean = true,
-        val enableOfflineMaps: Boolean = true
+        val enableOfflineMaps: Boolean = true,
+
+        // Contacto de emergencia / Emergency contact
+        val emergencyPhone: String = "",
+        val emergencyEmail: String = ""
     )
 
     /**
@@ -121,7 +129,10 @@ class UserPreferencesManager @Inject constructor(
             defaultMapZoom = preferences[DEFAULT_MAP_ZOOM] ?: 14f,
             showFishingSpots = preferences[SHOW_FISHING_SPOTS] ?: true,
             trackRoute = preferences[TRACK_ROUTE] ?: true,
-            enableOfflineMaps = preferences[ENABLE_OFFLINE_MAPS] ?: true
+            enableOfflineMaps = preferences[ENABLE_OFFLINE_MAPS] ?: true,
+
+            emergencyPhone = preferences[EMERGENCY_PHONE] ?: "",
+            emergencyEmail = preferences[EMERGENCY_EMAIL] ?: ""
         )
     }
     
@@ -282,6 +293,17 @@ class UserPreferencesManager @Inject constructor(
     suspend fun updateEnableOfflineMaps(enable: Boolean) {
         dataStore.edit { preferences ->
             preferences[ENABLE_OFFLINE_MAPS] = enable
+        }
+    }
+
+    /**
+     * Guardar el contacto de emergencia (telefono y/o email).
+     * Save the emergency contact (phone and/or email).
+     */
+    suspend fun updateEmergencyContact(phone: String, email: String) {
+        dataStore.edit { preferences ->
+            preferences[EMERGENCY_PHONE] = phone
+            preferences[EMERGENCY_EMAIL] = email
         }
     }
 }

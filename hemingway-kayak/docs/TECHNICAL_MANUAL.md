@@ -17,7 +17,7 @@
 
 - **Servicios**:
   - Clima: OpenWeatherMap API
-  - Mapas: Google Maps API
+  - Mapas: osmdroid (no Google Maps)
   - Voz: Android Speech Recognition API
 
 #### 1.2 Estructura de Datos

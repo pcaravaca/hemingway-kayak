@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -48,6 +49,8 @@ class SettingsFragment : Fragment() {
             binding.fishingRecommendationsSwitch.isChecked = prefs.enableFishingRecommendations
             binding.fishingSpotsSwitch.isChecked = prefs.showFishingSpots
             binding.trackRouteSwitch.isChecked = prefs.trackRoute
+            binding.emergencyPhoneInput.setText(prefs.emergencyPhone)
+            binding.emergencyEmailInput.setText(prefs.emergencyEmail)
         }
     }
 
@@ -66,6 +69,19 @@ class SettingsFragment : Fragment() {
 
         binding.trackRouteSwitch.setOnCheckedChangeListener { _, isChecked ->
             viewModel.updateTrackRoute(isChecked)
+        }
+
+        binding.saveEmergencyButton.setOnClickListener {
+            val phone = binding.emergencyPhoneInput.text?.toString().orEmpty()
+            val email = binding.emergencyEmailInput.text?.toString().orEmpty()
+            if (phone.isBlank() && email.isBlank()) {
+                binding.savedContactText.text = "Cargá al menos un teléfono o un email"
+                binding.savedContactText.isVisible = true
+                return@setOnClickListener
+            }
+            viewModel.saveEmergencyContact(phone, email)
+            binding.savedContactText.text = getString(R.string.settings_contact_saved)
+            binding.savedContactText.isVisible = true
         }
 
         binding.logoutButton.setOnClickListener {
