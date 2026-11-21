@@ -1,6 +1,7 @@
 package com.hemingway.kayak.data.remote
 
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -56,6 +57,19 @@ interface KayakApiService {
 
     @POST("api/v1/tournaments/{id}/catches")
     suspend fun recordCatch(@Path("id") id: String, @Body body: RecordCatchRequest): ApiResponse
+
+    // --- Kayaks ---
+    @GET("api/v1/kayaks/")
+    suspend fun kayaks(): List<KayakDto>
+
+    @POST("api/v1/kayaks/")
+    suspend fun createKayak(@Body body: KayakRequest): ApiResponse
+
+    @PUT("api/v1/kayaks/{id}")
+    suspend fun updateKayak(@Path("id") id: String, @Body body: KayakRequest): ApiResponse
+
+    @DELETE("api/v1/kayaks/{id}")
+    suspend fun deleteKayak(@Path("id") id: String): ApiResponse
 
     // --- Usuario y salidas propias ---
     @GET("api/v1/users/me")

@@ -32,3 +32,31 @@ data class RecordCatchRequest(
     val longitude: Double?,
     val photoUrl: String?
 )
+
+@JsonClass(generateAdapter = true)
+data class KayakDto(
+    val id: String,
+    val userId: String? = null,
+    val name: String,
+    val type: String? = null,
+    val length: Double? = null,
+    val width: Double? = null,
+    val weight: Double? = null,
+    val maxCapacity: Double? = null,
+    val material: String? = null,
+    val propulsion: String? = null,
+    val imageUrl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class KayakRequest(
+    val name: String,
+    val type: String? = null,
+    val length: Double? = null,
+    val width: Double? = null,
+    val weight: Double? = null,
+    val maxCapacity: Double? = null,
+    val material: String? = null,
+    val propulsion: String? = null,
+    val imageUrl: String? = null
+)

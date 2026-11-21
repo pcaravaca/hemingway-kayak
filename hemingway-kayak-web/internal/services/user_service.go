@@ -401,6 +401,15 @@ func (s *UserService) GetKayaks(c *fiber.Ctx) error {
 		if length.Valid {
 			kayak["length"] = length.Float64
 		}
+		if width.Valid {
+			kayak["width"] = width.Float64
+		}
+		if weight.Valid {
+			kayak["weight"] = weight.Float64
+		}
+		if maxCapacity.Valid {
+			kayak["maxCapacity"] = maxCapacity.Float64
+		}
 		if material.Valid {
 			kayak["material"] = material.String
 		}

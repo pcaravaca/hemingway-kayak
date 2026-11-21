@@ -51,6 +51,10 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.action_home_to_spots)
         }
 
+        binding.kayaksButton.setOnClickListener {
+            findNavController().navigate(R.id.action_home_to_kayaks)
+        }
+
         binding.settingsButton.setOnClickListener {
             findNavController().navigate(R.id.action_home_to_settings)
         }

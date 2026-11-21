@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="kayak_types">
+        <item>SIT_ON_TOP</item>
+        <item>SIT_INSIDE</item>
+        <item>INFLATABLE</item>
+        <item>FISHING</item>
+        <item>RACING</item>
+        <item>TOURING</item>
+    </string-array>
+    <string-array name="kayak_materials">
+        <item>FIBERGLASS</item>
+        <item>PLASTIC</item>
+        <item>CARBON</item>
+        <item>WOOD</item>
+        <item>INFLATABLE</item>
+    </string-array>
+    <string-array name="kayak_propulsions">
+        <item>PADDLE</item>
+        <item>PEDAL</item>
+        <item>SAIL</item>
+        <item>MOTOR</item>
+        <item>MIXED</item>
+    </string-array>
+</resources>

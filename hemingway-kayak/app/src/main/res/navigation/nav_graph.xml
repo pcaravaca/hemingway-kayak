@@ -39,6 +39,9 @@
             android:id="@+id/action_home_to_spots"
             app:destination="@id/spotsFragment" />
         <action
+            android:id="@+id/action_home_to_kayaks"
+            app:destination="@id/kayaksFragment" />
+        <action
             android:id="@+id/action_home_to_settings"
             app:destination="@id/settingsFragment" />
     </fragment>
@@ -78,6 +81,12 @@
         android:name="com.hemingway.kayak.ui.map.MapFragment"
         android:label="@string/map_title"
         tools:layout="@layout/fragment_map" />
+
+    <fragment
+        android:id="@+id/kayaksFragment"
+        android:name="com.hemingway.kayak.ui.kayaks.KayaksFragment"
+        android:label="Mis kayaks"
+        tools:layout="@layout/fragment_kayaks" />
 
     <fragment
         android:id="@+id/settingsFragment"
