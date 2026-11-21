@@ -30,6 +30,45 @@ class TripRepository @Inject constructor(
         null
     }
 
+    /** La salida completa (para el detalle). */
+    suspend fun trip(tripId: String): TripDto? =
+        runCatching { client.api.trip(tripId) }.getOrNull()
+
+    suspend fun points(tripId: String): List<TripPointDto> =
+        runCatching { client.api.tripPoints(tripId) }.getOrDefault(emptyList())
+
+    /** Edita título, descripción, tipo y estado. Devuelve null si salió bien. */
+    suspend fun update(
+        tripId: String,
+        title: String,
+        description: String?,
+        type: String?,
+        status: String?
+    ): String? = try {
+        client.api.updateTrip(
+            tripId,
+            TripUpdateRequest(title = title, description = description, type = type, status = status)
+        )
+        null
+    } catch (e: Exception) {
+        e.message ?: "No se pudo guardar la salida"
+    }
+
+    suspend fun addPoint(tripId: String, latitude: Double, longitude: Double): String? = try {
+        client.api.addTripPoint(tripId, TripPointRequest(latitude, longitude))
+        null
+    } catch (e: Exception) {
+        e.message ?: "No se pudo agregar el punto"
+    }
+
+    /** Borra la salida (el backend borra los puntos primero). Devuelve null si salió bien. */
+    suspend fun delete(tripId: String): String? = try {
+        client.api.deleteTrip(tripId)
+        null
+    } catch (e: Exception) {
+        e.message ?: "No se pudo eliminar la salida"
+    }
+
     /** Cierra la salida con la distancia acumulada y la última posición. */
     suspend fun finishTrip(tripId: String, end: Location?, distanceMeters: Float) {
         try {

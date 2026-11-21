@@ -6,7 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.lifecycle.lifecycleScope
+import com.hemingway.kayak.R
 import com.hemingway.kayak.data.remote.TripDto
 import com.hemingway.kayak.data.remote.UserRepository
 import com.hemingway.kayak.databinding.FragmentHistoryBinding
@@ -66,6 +68,12 @@ class HistoryFragment : Fragment() {
                 trip.distance?.let { if (it > 0) String.format("%.2f km", it) else null }
             ).joinToString(" · ")
             row.descriptionText.text = trip.description.orEmpty()
+            row.root.setOnClickListener {
+                findNavController().navigate(
+                    R.id.action_history_to_trip_detail,
+                    Bundle().apply { putString("id", trip.id) }
+                )
+            }
             container.addView(row.root)
         }
     }

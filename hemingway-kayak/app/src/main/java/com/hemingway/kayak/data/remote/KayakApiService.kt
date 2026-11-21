@@ -90,6 +90,18 @@ interface KayakApiService {
     @POST("api/v1/trips/")
     suspend fun createTrip(@Body body: TripRequest): TripCreatedDto
 
+    @GET("api/v1/trips/{id}")
+    suspend fun trip(@Path("id") id: String): TripDto
+
+    @DELETE("api/v1/trips/{id}")
+    suspend fun deleteTrip(@Path("id") id: String): ApiResponse
+
+    @GET("api/v1/trips/{id}/points")
+    suspend fun tripPoints(@Path("id") id: String): List<TripPointDto>
+
+    @POST("api/v1/trips/{id}/points")
+    suspend fun addTripPoint(@Path("id") id: String, @Body body: TripPointRequest): ApiResponse
+
     @PUT("api/v1/trips/{id}")
     suspend fun updateTrip(@Path("id") id: String, @Body body: TripUpdateRequest): ApiResponse
 

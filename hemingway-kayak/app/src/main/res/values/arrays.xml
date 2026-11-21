@@ -15,6 +15,18 @@
         <item>WOOD</item>
         <item>INFLATABLE</item>
     </string-array>
+    <string-array name="trip_types">
+        <item>FISHING</item>
+        <item>CAMPING</item>
+        <item>TOUR</item>
+        <item>RACING</item>
+    </string-array>
+    <string-array name="trip_statuses">
+        <item>PLANNED</item>
+        <item>LIVE</item>
+        <item>COMPLETED</item>
+        <item>CANCELLED</item>
+    </string-array>
     <string-array name="tournament_types">
         <item>FISHING</item>
         <item>RACING</item>

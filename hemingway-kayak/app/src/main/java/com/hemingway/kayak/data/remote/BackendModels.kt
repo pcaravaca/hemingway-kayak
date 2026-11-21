@@ -125,7 +125,27 @@ data class TripDto(
     @Json(name = "endTime") val endTime: String?,
     val distance: Double?,
     @Json(name = "startLat") val startLat: Double?,
-    @Json(name = "startLon") val startLon: Double?
+    @Json(name = "startLon") val startLon: Double?,
+    @Json(name = "endLat") val endLat: Double? = null,
+    @Json(name = "endLon") val endLon: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TripPointDto(
+    val id: String,
+    val tripId: String? = null,
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: String? = null,
+    val altitude: Double? = null,
+    val speed: Double? = null,
+    val heading: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TripPointRequest(
+    val latitude: Double,
+    val longitude: Double
 )
 
 @JsonClass(generateAdapter = true)
@@ -139,10 +159,13 @@ data class TripRequest(
 
 @JsonClass(generateAdapter = true)
 data class TripUpdateRequest(
-    val status: String?,
-    val endLat: Double?,
-    val endLon: Double?,
-    val distance: Double?
+    val title: String? = null,
+    val description: String? = null,
+    val type: String? = null,
+    val status: String? = null,
+    val endLat: Double? = null,
+    val endLon: Double? = null,
+    val distance: Double? = null
 )
 
 @JsonClass(generateAdapter = true)

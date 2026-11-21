@@ -127,7 +127,17 @@
         android:id="@+id/historyFragment"
         android:name="com.hemingway.kayak.ui.history.HistoryFragment"
         android:label="@string/history_title"
-        tools:layout="@layout/fragment_history" />
+        tools:layout="@layout/fragment_history">
+        <action
+            android:id="@+id/action_history_to_trip_detail"
+            app:destination="@id/tripDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/tripDetailFragment"
+        android:name="com.hemingway.kayak.ui.history.TripDetailFragment"
+        android:label="Salida"
+        tools:layout="@layout/fragment_trip_detail" />
 
     <fragment
         android:id="@+id/trackingFragment"
