@@ -603,23 +603,10 @@ func (s *TournamentService) RecordCatch(c *fiber.Ctx) error {
 		return c.Status(500).JSON(Error("Failed to record catch"))
 	}
 
-	_, err = tx.ExecContext(context.Background(),
-		`UPDATE tournament_participants SET 
-		 catches_count = catches_count + 1,
-		 score = score + $1
-		 WHERE id = $2`,
-		input.Weight,
-		input.ParticipantID,
-	)
-
-	if err != nil {
-		tx.Rollback()
-		return c.Status(500).JSON(Error("Failed to update score"))
-	}
-
 	tx.Commit()
-	// La captura cambia score y catches_count: hay que empujar el ranking nuevo.
-	s.broadcastRanking(tournamentID)
+	// La captura entra sin verificar: NO suma al puntaje todavía. Lo hace
+	// SetCatchVerified cuando el organizador la verifica (y lo quita al desverificar).
+	// Tampoco hay ranking que empujar acá.
 	return c.Status(201).JSON(fiber.Map{"id": catchID, "success": true})
 }
 
@@ -697,10 +684,9 @@ func (s *TournamentService) GetCatches(c *fiber.Ctx) error {
 // organizador del torneo puede hacerlo: el middleware RequireResourceOwnership
 // compara tournaments.organizer_id con el JWT y responde 403 si no coincide.
 //
-// El campo `verified` estaba en el esquema y la UI ya pintaba la badge
-// "VERIFICADA", pero ningún endpoint lo escribía: quedaba siempre en false.
-// NO toca score ni catches_count: hoy el puntaje se sumaba al cargar la captura
-// y cambiar eso exigiría recomputar lo ya cargado (ver nota en el AGENTS.md).
+// El puntaje cuenta SÓLO las capturas verificadas: verificar suma el peso y una
+// captura al participante; desverificar lo resta (con GREATEST para no ir negativo).
+// Por eso la transición es la que dispara el broadcast del ranking.
 func (s *TournamentService) SetCatchVerified(c *fiber.Ctx) error {
 	tournamentID := c.Params("id")
 	catchID := c.Params("catchId")
@@ -717,12 +703,33 @@ func (s *TournamentService) SetCatchVerified(c *fiber.Ctx) error {
 		verified = *body.Verified
 	}
 
+	ctx := context.Background()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return c.Status(500).JSON(Error("Transaction error"))
+	}
+	defer tx.Rollback()
+
+	var before bool
+	var participantID string
+	var weight sql.NullFloat64
+	if err := tx.QueryRowContext(ctx,
+		`SELECT verified, CAST(participant_id AS VARCHAR(36)), weight
+		   FROM tournament_catches
+		  WHERE id = $1 AND tournament_id = $2`,
+		catchID, tournamentID,
+	).Scan(&before, &participantID, &weight); err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).JSON(Error("Catch not found in this tournament"))
+		}
+		return c.Status(500).JSON(Error("Database error"))
+	}
+
 	var verifiedBy sql.NullString
 	if verified {
-		userID, _ := c.Locals("userId").(string)
-		if userID != "" {
+		if userID, _ := c.Locals("userId").(string); userID != "" {
 			var username string
-			if err := s.db.QueryRowContext(context.Background(),
+			if err := tx.QueryRowContext(ctx,
 				`SELECT username FROM users WHERE id = $1`, userID,
 			).Scan(&username); err == nil {
 				verifiedBy = sql.NullString{String: username, Valid: true}
@@ -730,16 +737,40 @@ func (s *TournamentService) SetCatchVerified(c *fiber.Ctx) error {
 		}
 	}
 
-	res, err := s.db.ExecContext(context.Background(),
+	if _, err := tx.ExecContext(ctx,
 		`UPDATE tournament_catches
 		    SET verified = $1, verified_by = $2
 		  WHERE id = $3 AND tournament_id = $4`,
-		verified, verifiedBy, catchID, tournamentID)
-	if err != nil {
+		verified, verifiedBy, catchID, tournamentID,
+	); err != nil {
 		return c.Status(500).JSON(Error("Database error"))
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return c.Status(404).JSON(Error("Catch not found in this tournament"))
+
+	if before != verified {
+		w := weight.Float64
+		if verified {
+			_, err = tx.ExecContext(ctx,
+				`UPDATE tournament_participants
+				    SET score = score + $1, catches_count = catches_count + 1
+				  WHERE id = $2`, w, participantID)
+		} else {
+			_, err = tx.ExecContext(ctx,
+				`UPDATE tournament_participants
+				    SET score = GREATEST(score - $1, 0),
+				        catches_count = GREATEST(catches_count - 1, 0)
+				  WHERE id = $2`, w, participantID)
+		}
+		if err != nil {
+			return c.Status(500).JSON(Error("Failed to update score"))
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return c.Status(500).JSON(Error("Transaction error"))
+	}
+
+	if before != verified {
+		s.broadcastRanking(tournamentID)
 	}
 
 	return c.JSON(fiber.Map{"success": true, "verified": verified})
