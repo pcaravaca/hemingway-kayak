@@ -15,6 +15,11 @@
         <item>WOOD</item>
         <item>INFLATABLE</item>
     </string-array>
+    <string-array name="tournament_types">
+        <item>FISHING</item>
+        <item>RACING</item>
+        <item>TOURING</item>
+    </string-array>
     <string-array name="kayak_propulsions">
         <item>PADDLE</item>
         <item>PEDAL</item>

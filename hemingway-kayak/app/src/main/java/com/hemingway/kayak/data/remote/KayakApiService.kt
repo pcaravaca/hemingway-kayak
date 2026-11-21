@@ -52,6 +52,9 @@ interface KayakApiService {
     @GET("api/v1/tournaments/{id}/catches")
     suspend fun catches(@Path("id") id: String): List<CatchDto>
 
+    @POST("api/v1/tournaments/")
+    suspend fun createTournament(@Body body: TournamentRequest): ApiResponse
+
     @POST("api/v1/tournaments/{id}/join")
     suspend fun joinTournament(@Path("id") id: String, @Body body: JoinRequest): ApiResponse
 

@@ -105,7 +105,7 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 	status := c.Query("status")
 
 	query := `SELECT CAST(t.id AS VARCHAR(36)), CAST(t.organizer_id AS VARCHAR(36)), t.name, t.description, t.start_time, t.end_time,
-	          t.location_name, t.start_lat, t.start_lon, t.status, t.tournamenttype,
+	          t.location_name, t.start_lat, t.start_lon, UPPER(t.status) AS status, t.tournamenttype,
 	          t.max_participants, t.created_at,
 	          u.username as organizer_username,
 	          (SELECT COUNT(*) FROM tournament_participants WHERE tournament_id = t.id) as participant_count
@@ -114,7 +114,7 @@ func (s *TournamentService) GetTournaments(c *fiber.Ctx) error {
 
 	var args []interface{}
 	if status != "" {
-		query += " AND t.status = $" + strconv.Itoa(len(args)+1)
+		query += " AND UPPER(t.status) = UPPER($" + strconv.Itoa(len(args)+1) + ")"
 		args = append(args, status)
 	}
 	query += " ORDER BY t.start_time DESC"
@@ -335,7 +335,7 @@ func (s *TournamentService) CreateTournament(c *fiber.Ctx) error {
 	err := s.db.QueryRowContext(context.Background(),
 		`INSERT INTO tournaments (name, description, organizer_id, start_time, end_time, 
 		 location_name, start_lat, start_lon, tournamenttype, max_participants, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'planned')
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'PLANNED')
 		 RETURNING id::text`,
 		input.Name,
 		input.Description,

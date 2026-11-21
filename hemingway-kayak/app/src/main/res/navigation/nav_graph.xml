@@ -102,7 +102,16 @@
         <action
             android:id="@+id/action_tournaments_to_detail"
             app:destination="@id/tournamentDetailFragment" />
+        <action
+            android:id="@+id/action_tournaments_to_create"
+            app:destination="@id/tournamentCreateFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/tournamentCreateFragment"
+        android:name="com.hemingway.kayak.ui.tournaments.TournamentCreateFragment"
+        android:label="Crear torneo"
+        tools:layout="@layout/fragment_tournament_create" />
 
     <fragment
         android:id="@+id/tournamentDetailFragment"

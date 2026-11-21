@@ -34,6 +34,19 @@ data class RecordCatchRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class TournamentRequest(
+    val name: String,
+    val description: String? = null,
+    val type: String? = null,
+    val maxParticipants: Int? = null,
+    val startTime: String,
+    val endTime: String,
+    val locationName: String? = null,
+    val startLat: Double? = null,
+    val startLon: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class KayakDto(
     val id: String,
     val userId: String? = null,

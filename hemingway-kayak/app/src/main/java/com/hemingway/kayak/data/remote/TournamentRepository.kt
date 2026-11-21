@@ -25,6 +25,28 @@ class TournamentRepository @Inject constructor(
     suspend fun catches(tournamentId: String): List<CatchDto> =
         runCatching { client.api.catches(tournamentId) }.getOrDefault(emptyList())
 
+    suspend fun create(
+        name: String,
+        description: String?,
+        type: String?,
+        maxParticipants: Int?,
+        startTime: String,
+        endTime: String,
+        locationName: String?,
+        startLat: Double?,
+        startLon: Double?
+    ): String? = try {
+        client.api.createTournament(
+            TournamentRequest(
+                name, description, type, maxParticipants,
+                startTime, endTime, locationName, startLat, startLon
+            )
+        )
+        null
+    } catch (e: Exception) {
+        e.message ?: "No se pudo crear el torneo"
+    }
+
     suspend fun join(tournamentId: String, kayakId: String?): String? = try {
         client.api.joinTournament(tournamentId, JoinRequest(kayakId))
         null

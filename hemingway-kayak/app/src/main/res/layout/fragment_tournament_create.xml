@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/logo_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_lg">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Crear torneo"
+            android:textColor="@color/logo_neon"
+            android:textSize="@dimen/text_size_headline"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="Organizá tu propio torneo de pesca"
+            android:textColor="@color/logo_turquoise"
+            android:textSize="@dimen/text_size_body" />
+
+        <EditText
+            android:id="@+id/tournamentName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:hint="Nombre"
+            android:inputType="text"
+            android:textColor="@color/white"
+            android:textColorHint="#8BA3BD" />
+
+        <EditText
+            android:id="@+id/tournamentDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:hint="Descripción"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:textColor="@color/white"
+            android:textColorHint="#8BA3BD" />
+
+        <Spinner
+            android:id="@+id/tournamentType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm" />
+
+        <EditText
+            android:id="@+id/tournamentMax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:hint="Cupo máximo (opcional)"
+            android:inputType="number"
+            android:textColor="@color/white"
+            android:textColorHint="#8BA3BD" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/startButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:text="Elegir inicio"
+            android:textColor="@color/logo_turquoise"
+            app:strokeColor="@color/logo_turquoise" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/endButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="Elegir fin"
+            android:textColor="@color/logo_turquoise"
+            app:strokeColor="@color/logo_turquoise" />
+
+        <EditText
+            android:id="@+id/tournamentLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:hint="Lugar (opcional)"
+            android:inputType="text"
+            android:textColor="@color/white"
+            android:textColorHint="#8BA3BD" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/tournamentLat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Latitud"
+                android:inputType="numberDecimal|numberSigned"
+                android:text="9.9382"
+                android:textColor="@color/white"
+                android:textColorHint="#8BA3BD" />
+
+            <EditText
+                android:id="@+id/tournamentLon"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_weight="1"
+                android:hint="Longitud"
+                android:inputType="numberDecimal|numberSigned"
+                android:text="-84.8371"
+                android:textColor="@color/white"
+                android:textColorHint="#8BA3BD" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/errorView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:textColor="@color/logo_neon"
+            android:textSize="@dimen/text_size_body"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/createButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:backgroundTint="@color/logo_turquoise"
+            android:text="Crear torneo"
+            android:textColor="@color/logo_dark" />
+    </LinearLayout>
+</ScrollView>
