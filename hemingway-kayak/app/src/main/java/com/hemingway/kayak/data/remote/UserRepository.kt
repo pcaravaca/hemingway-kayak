@@ -16,4 +16,20 @@ class UserRepository @Inject constructor(
 
     suspend fun myTrips(): List<TripDto> =
         runCatching { client.api.myTrips() }.getOrDefault(emptyList())
+
+    /** Actualiza los campos editables del perfil (displayName, bio, tracking, avatar). */
+    suspend fun update(
+        id: String,
+        displayName: String?,
+        bio: String?,
+        trackingEnabled: Boolean,
+        avatarUrl: String?
+    ): UserDto? = runCatching {
+        // El backend responde {success,message}; el perfil actualizado sale de /users/me.
+        client.api.updateUser(
+            id,
+            UpdateUserRequest(displayName, bio, trackingEnabled, avatarUrl)
+        )
+        client.api.me()
+    }.getOrNull()
 }

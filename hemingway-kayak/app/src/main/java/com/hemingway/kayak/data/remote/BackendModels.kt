@@ -37,6 +37,15 @@ data class UserDto(
     @Json(name = "trackingEnabled") val trackingEnabled: Boolean?
 )
 
+/** Parámetros editables del perfil. El backend hace COALESCE por campo. */
+@JsonClass(generateAdapter = true)
+data class UpdateUserRequest(
+    @Json(name = "displayName") val displayName: String?,
+    val bio: String?,
+    @Json(name = "trackingEnabled") val trackingEnabled: Boolean,
+    @Json(name = "avatarUrl") val avatarUrl: String?
+)
+
 @JsonClass(generateAdapter = true)
 data class TournamentDto(
     val id: String,

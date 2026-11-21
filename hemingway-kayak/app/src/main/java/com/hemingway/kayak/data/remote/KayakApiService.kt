@@ -64,6 +64,9 @@ interface KayakApiService {
     @GET("api/v1/users/me/stats")
     suspend fun myStats(): StatsDto
 
+    @PUT("api/v1/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body body: UpdateUserRequest): ApiResponse
+
     @GET("api/v1/trips/mine")
     suspend fun myTrips(): List<TripDto>
 

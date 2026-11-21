@@ -9,6 +9,33 @@
     </header>
 
     <form class="card form" @submit.prevent="handleUpdate">
+      <div class="field">
+        <span>Foto de perfil</span>
+        <div class="avatar-row">
+          <img
+            v-if="form.avatarUrl"
+            :src="form.avatarUrl"
+            class="avatar-preview"
+            alt="Tu foto de perfil"
+          />
+          <div v-else class="avatar-preview avatar-empty">{{ inicial }}</div>
+          <label
+            class="hemmingway-btn hemmingway-btn-secondary avatar-btn"
+            :class="{ 'is-disabled': uploading }"
+          >
+            {{ uploading ? 'Subiendo…' : 'Elegir foto' }}
+            <input
+              type="file"
+              accept="image/*"
+              class="avatar-input"
+              :disabled="uploading"
+              @change="onAvatarSelected"
+            />
+          </label>
+        </div>
+        <span v-if="avatarHint" class="field-hint">{{ avatarHint }}</span>
+      </div>
+
       <label class="field">
         <span>Nombre visible</span>
         <input v-model="form.displayName" class="hemmingway-input" placeholder="Tu nombre" />
@@ -46,17 +73,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
 const router = useRouter()
 
-const form = ref({ displayName: '', bio: '', trackingEnabled: false })
+const form = ref({ displayName: '', bio: '', trackingEnabled: false, avatarUrl: '' })
 const saving = ref(false)
 const saved = ref(false)
 const message = ref('')
+const uploading = ref(false)
+const avatarHint = ref('')
+
+// Inicial del nombre, para el placeholder cuando todavía no hay foto.
+const inicial = computed(() => {
+  const n = form.value.displayName || auth.user?.username || ''
+  return (n.trim().charAt(0) || '?').toUpperCase()
+})
 
 onMounted(async () => {
   if (auth.user) await auth.fetchUser()
@@ -64,9 +100,37 @@ onMounted(async () => {
   form.value = {
     displayName: u.displayName || u.username || '',
     bio: u.bio || '',
-    trackingEnabled: !!u.trackingEnabled
+    trackingEnabled: !!u.trackingEnabled,
+    avatarUrl: u.avatarUrl || ''
   }
 })
+
+// La foto se sube a /api/v1/uploads (que valida el contenido) y lo que se guarda
+// en el perfil es la URL que devuelve; el backend la sirve estática por /uploads.
+async function onAvatarSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  avatarHint.value = ''
+  if (file.size > 8 * 1024 * 1024) {
+    avatarHint.value = 'La foto supera los 8 MB.'
+    event.target.value = ''
+    return
+  }
+
+  uploading.value = true
+  try {
+    const data = new FormData()
+    data.append('photo', file)
+    const { data: res } = await axios.post('/api/v1/uploads', data)
+    form.value.avatarUrl = res.url
+    avatarHint.value = 'Foto lista. Guardá los cambios para aplicarla.'
+  } catch (e) {
+    avatarHint.value = e.response?.data?.error || 'No se pudo subir la foto.'
+    event.target.value = ''
+  } finally {
+    uploading.value = false
+  }
+}
 
 async function handleUpdate() {
   saving.value = true
@@ -74,7 +138,8 @@ async function handleUpdate() {
   const result = await auth.updateProfile({
     displayName: form.value.displayName,
     bio: form.value.bio,
-    trackingEnabled: form.value.trackingEnabled
+    trackingEnabled: form.value.trackingEnabled,
+    avatarUrl: form.value.avatarUrl || null
   })
   saving.value = false
 
@@ -128,6 +193,39 @@ async function handleUpdate() {
   text-transform: uppercase;
   color: var(--hemmingway-text-muted);
 }
+
+.field-hint {
+  font-family: var(--hemmingway-font-mono);
+  font-size: 12px;
+  color: var(--hemmingway-text-secondary);
+}
+
+.avatar-row { display: flex; align-items: center; gap: 16px; }
+
+.avatar-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--hemmingway-line-2);
+  background: var(--hemmingway-bg-tertiary);
+}
+
+.avatar-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--hemmingway-font-display);
+  font-size: 28px;
+  color: var(--hemmingway-blue);
+}
+
+/* El input va escondido pero accesible: el label es el botón visible. */
+.avatar-input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.avatar-btn { position: relative; cursor: pointer; }
+
+.avatar-btn.is-disabled { opacity: .6; pointer-events: none; }
 
 textarea.hemmingway-input { resize: vertical; min-height: 96px; }
 

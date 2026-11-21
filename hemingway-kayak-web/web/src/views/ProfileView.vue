@@ -20,7 +20,13 @@
     <div v-else class="profile-content">
       <div class="profile-card hemingway-card">
         <div class="profile-avatar">
-          <div class="avatar-placeholder">
+          <img
+            v-if="user?.avatarUrl"
+            :src="user.avatarUrl"
+            class="avatar-img"
+            alt="Foto de perfil"
+          />
+          <div v-else class="avatar-placeholder">
             {{ userInitials }}
           </div>
         </div>
@@ -219,6 +225,13 @@ async function handleLogout() {
   font-size: var(--hemmingway-font-size-2xl);
   font-weight: 700;
   color: var(--hemmingway-dark);
+}
+
+.avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .profile-name {

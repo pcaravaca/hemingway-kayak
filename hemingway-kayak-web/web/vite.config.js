@@ -26,6 +26,12 @@ export default defineConfig({
         target: apiTarget,
         changeOrigin: true,
       },
+      // Las fotos (capturas y avatares) las sirve el backend por /uploads.
+      // Sin esto el dev server responde el HTML de la SPA y la imagen no carga.
+      '/uploads': {
+        target: apiTarget,
+        changeOrigin: true,
+      },
       '/ws': {
         target: wsTarget,
         ws: true,

@@ -13,6 +13,28 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/avatarImage"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:background="@color/logo_turquoise"
+            android:contentDescription="Foto de perfil"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Hemingway.Avatar" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/changeAvatarButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="Cambiar foto"
+            android:textColor="@color/logo_turquoise"
+            app:strokeColor="@color/logo_turquoise" />
+
         <TextView
             android:id="@+id/nameText"
             android:layout_width="match_parent"
