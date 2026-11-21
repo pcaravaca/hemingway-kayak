@@ -1,8 +1,10 @@
 package com.hemingway.kayak
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -110,6 +112,12 @@ class MainActivity : AppCompatActivity() {
                 navController.navigate(item.itemId, null, options)
             }
             true
+        }
+        // Login y registro no son destinos de tab: sin esto la barra queda visible
+        // con la ultima pestaña resaltada, como si el usuario estuviera ahi.
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val auth = destination.id == R.id.loginFragment || destination.id == R.id.registerFragment
+            bottomNav.isVisible = !auth
         }
         bottomNav.setOnItemReselectedListener { item ->
             // El tab ya es el actual: sólo hace falta limpiar las pantallas apiladas.
