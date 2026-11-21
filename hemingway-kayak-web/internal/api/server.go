@@ -172,6 +172,10 @@ func (s *Server) setupRoutes() {
 	sec.Post("/tournaments/:id/join", s.tournamentService.JoinTournament)
 	sec.Post("/tournaments/:id/leave", s.tournamentService.LeaveTournament)
 	sec.Post("/tournaments/:id/catches", s.tournamentService.RecordCatch)
+	// Verificar/desverificar una captura: sólo el organizador del torneo.
+	sec.Post("/tournaments/:id/catches/:catchId/verify",
+		middleware.RequireResourceOwnership(s.db, "tournaments", "organizer_id", "id"),
+		s.tournamentService.SetCatchVerified)
 
 	sec.Get("/tracking/session/:userId", middleware.RequireOwnership("userId"), s.trackingService.GetActiveSession)
 	sec.Post("/tracking/start", s.trackingService.StartTracking)

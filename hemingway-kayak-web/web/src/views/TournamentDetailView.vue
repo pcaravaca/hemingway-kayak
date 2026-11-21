@@ -152,7 +152,17 @@
             <div class="catch-meta">
               <span class="weight">{{ c.weight.toFixed(1) }} kg</span>
               <span v-if="c.verified" class="badge is-ok">VERIFICADA</span>
+              <span v-if="c.verified && c.verifiedBy" class="catch-verified-by">por {{ c.verifiedBy }}</span>
               <span class="time">{{ formatDate(c.createdAt) }}</span>
+            </div>
+            <div v-if="isOrganizer" class="catch-actions">
+              <button
+                type="button"
+                class="hemmingway-btn hemmingway-btn-ghost catch-verify"
+                @click="toggleVerify(c)"
+              >
+                {{ c.verified ? 'Desverificar' : 'Verificar' }}
+              </button>
             </div>
           </li>
         </ul>
@@ -185,6 +195,7 @@ const participantMarkers = {}
 const savingCatch = ref(false)
 const catchSaved = ref(false)
 const catchMessage = ref('')
+const verifyMessage = ref('')
 const uploadingPhoto = ref(false)
 
 // La foto se sube a /api/v1/uploads y lo que se guarda en la captura es la URL
@@ -255,6 +266,29 @@ const myParticipation = computed(() => {
   if (!me) return null
   return rankings.value.find(p => p.userId === me) || null
 })
+
+// Verificar capturas es tarea del organizador del torneo, no de quien la cargó.
+const isOrganizer = computed(() => {
+  const me = auth.user?.id
+  return !!me && !!tournament.value?.organizerId && tournament.value.organizerId === me
+})
+
+async function toggleVerify(c) {
+  verifyMessage.value = ''
+  try {
+    const { data } = await axios.post(
+      `/api/v1/tournaments/${route.params.id}/catches/${c.id}/verify`,
+      { verified: !c.verified }
+    )
+    c.verified = data.verified
+    const res = await axios.get(`/api/v1/tournaments/${route.params.id}/catches`)
+    catches.value = res.data || []
+  } catch (error) {
+    verifyMessage.value = error.response?.status === 403
+      ? 'Solo el organizador del torneo puede verificar capturas.'
+      : 'No se pudo actualizar la captura.'
+  }
+}
 
 onMounted(async () => {
   await fetchTournament()
@@ -696,6 +730,7 @@ function formatLocation(lat, lon) {
   gap: 16px;
   padding: 13px 0;
   border-bottom: 1px solid var(--hemmingway-line);
+  flex-wrap: wrap;
 }
 
 .catches li:last-child { border-bottom: none; }
@@ -733,6 +768,24 @@ function formatLocation(lat, lon) {
   font-family: var(--hemmingway-font-mono);
   font-size: 11.5px;
   color: var(--hemmingway-text-muted);
+}
+
+.catch-verified-by {
+  font-family: var(--hemmingway-font-mono);
+  font-size: 11px;
+  color: var(--hemmingway-text-muted);
+}
+
+/* La verificación la hace el organizador: el botón va en su propia línea, a la derecha. */
+.catch-actions {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.catch-verify {
+  padding: 7px 14px;
+  font-size: 12px;
 }
 
 @media (max-width: 1000px) {

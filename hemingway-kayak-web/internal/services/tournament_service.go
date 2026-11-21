@@ -692,3 +692,55 @@ func (s *TournamentService) GetCatches(c *fiber.Ctx) error {
 
 	return c.JSON(catches)
 }
+
+// SetCatchVerified marca (o desmarca) una captura como verificada. Sólo el
+// organizador del torneo puede hacerlo: el middleware RequireResourceOwnership
+// compara tournaments.organizer_id con el JWT y responde 403 si no coincide.
+//
+// El campo `verified` estaba en el esquema y la UI ya pintaba la badge
+// "VERIFICADA", pero ningún endpoint lo escribía: quedaba siempre en false.
+// NO toca score ni catches_count: hoy el puntaje se sumaba al cargar la captura
+// y cambiar eso exigiría recomputar lo ya cargado (ver nota en el AGENTS.md).
+func (s *TournamentService) SetCatchVerified(c *fiber.Ctx) error {
+	tournamentID := c.Params("id")
+	catchID := c.Params("catchId")
+	if catchID == "" {
+		return c.Status(400).JSON(Error("missing catch id"))
+	}
+
+	// Sin cuerpo (o cuerpo sin `verified`) se entiende como "verificar".
+	verified := true
+	var body struct {
+		Verified *bool `json:"verified"`
+	}
+	if err := c.BodyParser(&body); err == nil && body.Verified != nil {
+		verified = *body.Verified
+	}
+
+	var verifiedBy sql.NullString
+	if verified {
+		userID, _ := c.Locals("userId").(string)
+		if userID != "" {
+			var username string
+			if err := s.db.QueryRowContext(context.Background(),
+				`SELECT username FROM users WHERE id = $1`, userID,
+			).Scan(&username); err == nil {
+				verifiedBy = sql.NullString{String: username, Valid: true}
+			}
+		}
+	}
+
+	res, err := s.db.ExecContext(context.Background(),
+		`UPDATE tournament_catches
+		    SET verified = $1, verified_by = $2
+		  WHERE id = $3 AND tournament_id = $4`,
+		verified, verifiedBy, catchID, tournamentID)
+	if err != nil {
+		return c.Status(500).JSON(Error("Database error"))
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return c.Status(404).JSON(Error("Catch not found in this tournament"))
+	}
+
+	return c.JSON(fiber.Map{"success": true, "verified": verified})
+}
