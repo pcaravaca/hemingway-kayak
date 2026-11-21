@@ -11,6 +11,7 @@ Hemingway Kayak is a full-stack solution for kayak fishing enthusiasts:
 | **Web Frontend** | Vue 3, Pinia, Leaflet | `/hemingway-kayak-web/web/` |
 
 ### Android App Features
+- Login y registro de cuenta contra el backend (JWT)
 - Real-time weather & barometric pressure trends
 - Moon phase tracking
 - Fishing recommendations
@@ -603,11 +604,9 @@ curl http://localhost:8080/api/v1/tracking/followers
 ## TODO
 
 - [ ] Redis for WebSocket pub/sub scaling
-- [ ] JWT middleware for protected routes
-- [ ] File upload for catch photos
-- [ ] Push notifications
-- [ ] Real-time tournament updates via WebSocket
-- [ ] Tournament catch submission API
-- [ ] Photo upload for catches
-- [ ] Connect Android app to web backend
-- [ ] Real password hashing verification
+- [ ] Push notifications (bloqueado: falta el `google-services.json` de Firebase y la credencial del servidor)
+- [ ] Sonar y suscripciones: no implementados a propósito (requieren SDKs propietarios y Play Billing)
+
+Hecho y verificado: JWT middleware, `POST /api/v1/uploads`, WS de ranking y de tracking,
+API de capturas, foto de captura, Android conectada al backend, bcrypt, pantalla de
+registro (`ui/auth/RegisterFragment` + `fragment_register.xml`, verificado en emulador).

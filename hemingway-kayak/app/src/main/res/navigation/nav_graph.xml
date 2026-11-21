@@ -9,7 +9,17 @@
         android:id="@+id/loginFragment"
         android:name="com.hemingway.kayak.ui.auth.LoginFragment"
         android:label="@string/login_title"
-        tools:layout="@layout/fragment_login" />
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/registerFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.hemingway.kayak.ui.auth.RegisterFragment"
+        android:label="@string/register_title"
+        tools:layout="@layout/fragment_register" />
 
     <fragment
         android:id="@+id/homeFragment"

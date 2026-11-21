@@ -41,6 +41,9 @@ class LoginFragment : Fragment() {
                 binding.passwordInput.text?.toString().orEmpty()
             )
         }
+        binding.loginNoAccount.setOnClickListener {
+            findNavController().navigate(R.id.action_login_to_register)
+        }
         observeState()
     }
 

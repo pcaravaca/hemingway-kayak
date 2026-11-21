@@ -19,6 +19,17 @@
     <string name="login_button">Entrar</string>
     <string name="login_empty_fields">Completá correo y contraseña</string>
     <string name="login_failed">No pudimos ingresar. Revisá correo y contraseña.</string>
+    <string name="login_no_account">¿No tenés cuenta? Creala</string>
+    <string name="register_title">Crear cuenta</string>
+    <string name="register_subtitle">Sumate a la bitácora</string>
+    <string name="register_name">Nombre</string>
+    <string name="register_email">Correo</string>
+    <string name="register_password">Contraseña</string>
+    <string name="register_button">Crear cuenta</string>
+    <string name="register_empty_fields">Completá nombre, correo y contraseña</string>
+    <string name="register_password_short">La contraseña tiene que tener al menos 8 caracteres</string>
+    <string name="register_failed">No pudimos crear la cuenta. Revisá los datos.</string>
+    <string name="register_have_account">¿Ya tenés cuenta? Entrá</string>
     <string name="logout_button">Cerrar sesión</string>
     
     <!-- Botones comunes / Common buttons -->

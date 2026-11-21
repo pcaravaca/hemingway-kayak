@@ -127,5 +127,18 @@
             app:layout_constraintTop_toBottomOf="@id/loginButton"
             tools:visibility="visible" />
 
+        <TextView
+            android:id="@+id/loginNoAccount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:padding="@dimen/spacing_sm"
+            android:text="@string/login_no_account"
+            android:textColor="@color/logo_turquoise"
+            android:textSize="@dimen/text_size_body"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/loginProgress" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
