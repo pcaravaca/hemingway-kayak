@@ -17,6 +17,8 @@ yarn-error.log*
 *.test
 *.out
 hemingway-server
+# binario de la API que se arma para probar en local (GOOS=linux go build -o hk-api)
+hk-api
 
 # ---- Android / Gradle ----
 .gradle/

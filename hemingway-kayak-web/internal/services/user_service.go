@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -70,11 +72,25 @@ func (s *UserService) Register(c *fiber.Ctx) error {
 		return c.Status(400).JSON(Error("Invalid request body"))
 	}
 
-	if input.Email == "" || input.Username == "" || input.Password == "" {
-		return c.Status(400).JSON(Error("email, username and password are required"))
+	if input.Email == "" || input.Password == "" {
+		return c.Status(400).JSON(Error("email and password are required"))
 	}
 	if len(input.Password) < 8 {
 		return c.Status(400).JSON(Error("password must be at least 8 characters"))
+	}
+
+	// El username lo resuelve el servidor: si el cliente manda uno que ya existe
+	// (o no manda ninguno), se deriva de la parte local del correo con un sufijo.
+	// Antes el UNIQUE de users.username dejaba afuera a cualquiera cuyo correo
+	// compartiera parte local con otro (juan@gmail.com vs juan@yahoo.com).
+	base := input.Username
+	if base == "" {
+		base = strings.SplitN(input.Email, "@", 2)[0]
+	}
+	username, err := s.uniqueUsername(context.Background(), base)
+	if err != nil {
+		log.Printf("register: no se pudo resolver username: %v", err)
+		return c.Status(500).JSON(Error("Database error"))
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
@@ -85,8 +101,8 @@ func (s *UserService) Register(c *fiber.Ctx) error {
 	_, err = s.db.ExecContext(context.Background(),
 		`INSERT INTO users (email, username, password_hash, display_name) 
 		 VALUES ($1, $2, $3, $4)`,
-		input.Email,
-		input.Username,
+		strings.ToLower(strings.TrimSpace(input.Email)),
+		username,
 		string(hashedPassword),
 		input.DisplayName,
 	)
@@ -119,6 +135,46 @@ func (s *UserService) Register(c *fiber.Ctx) error {
 		"userId":  userID,
 		"user":    user,
 	})
+}
+
+// usernameBase normaliza un nombre de usuario: minúscula y solo [a-z0-9]; cualquier
+// otro carácter pasa a "-" y se recortan los extremos.
+func usernameBase(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(strings.TrimSpace(s)) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		} else {
+			b.WriteRune('-')
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if out == "" {
+		return "usuario"
+	}
+	return out
+}
+
+// uniqueUsername devuelve un username libre; si el buscado ya existe le agrega un
+// sufijo numérico (juan, juan2, juan3, …). users.username es UNIQUE: sin esto dos
+// correos con la misma parte local (juan@gmail.com y juan@yahoo.com) no podían
+// convivir y el segundo registro fallaba con "Email or username already exists".
+func (s *UserService) uniqueUsername(ctx context.Context, base string) (string, error) {
+	root := usernameBase(base)
+	candidate := root
+	for i := 2; i <= 1000; i++ {
+		var exists bool
+		if err := s.db.QueryRowContext(ctx,
+			`SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`, candidate,
+		).Scan(&exists); err != nil {
+			return "", err
+		}
+		if !exists {
+			return candidate, nil
+		}
+		candidate = root + strconv.Itoa(i)
+	}
+	return "", fmt.Errorf("no se pudo generar un username unico desde %q", base)
 }
 
 func (s *UserService) Login(c *fiber.Ctx) error {

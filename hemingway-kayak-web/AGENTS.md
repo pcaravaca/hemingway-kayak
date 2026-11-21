@@ -331,6 +331,14 @@ La cuenta real de Peter es `pcaravaca@gmail.com` (creada por registro, **no** po
 | POST | `/api/v1/auth/login` | Login user |
 | POST | `/api/v1/auth/logout` | Logout user |
 
+> **`username` lo resuelve el servidor.** El cliente puede mandarlo (ahora es opcional) pero
+> si ya existe —o si manda uno con caracteres raros— el backend lo normaliza a `[a-z0-9]`
+> y le agrega un sufijo numérico (`juan-perez`, `juan-perez2`, …). `users.username` es
+> `UNIQUE`: antes el servidor aceptaba el username del cliente tal cual, y dos correos con
+> la misma parte local (`juan@gmail.com` / `juan@yahoo.com`) hacían que el segundo
+> registro fallara con "Email or username already exists". No volver a confiar en el
+> username que manda el cliente.
+
 ### Users
 | Method | Endpoint | Description |
 |--------|----------|-------------|
