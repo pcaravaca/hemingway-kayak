@@ -14,6 +14,27 @@ class TripRepository @Inject constructor(
      * hay sesión o el server falla: el tracking no puede quedarse sin salida, así que
      * quien llama decide si sigue sin tripId.
      */
+    /** Alta manual de salida (para registrar una salida ya hecha). Devuelve el id o null. */
+    suspend fun create(
+        title: String,
+        description: String?,
+        type: String?,
+        startLat: Double?,
+        startLon: Double?
+    ): String? = try {
+        client.api.createTrip(
+            TripRequest(
+                title = title,
+                description = description,
+                type = type ?: "FISHING",
+                startLat = startLat,
+                startLon = startLon
+            )
+        ).id
+    } catch (e: Exception) {
+        null
+    }
+
     suspend fun createLiveTrip(latitude: Double?, longitude: Double?): String? = try {
         val now = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
             .format(java.util.Date())

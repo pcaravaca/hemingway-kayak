@@ -37,6 +37,9 @@ class HistoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.createTripButton.setOnClickListener {
+            findNavController().navigate(R.id.action_history_to_create)
+        }
         load()
     }
 

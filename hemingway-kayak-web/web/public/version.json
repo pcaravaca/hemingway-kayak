@@ -1,6 +1,6 @@
 {
-  "versionCode": 9,
-  "versionName": "1.7.0",
+  "versionCode": 10,
+  "versionName": "1.8.0",
   "apkUrl": "https://hemmingwaykayak.tail6521a6.ts.net/HemingwayKayak.apk",
-  "releaseNotes": "Login y registro: sin la barra de pestañas de fondo."
+  "releaseNotes": "Nueva salida: registrá una salida hecha sin el tracking."
 }

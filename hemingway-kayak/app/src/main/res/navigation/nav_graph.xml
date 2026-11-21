@@ -131,7 +131,16 @@
         <action
             android:id="@+id/action_history_to_trip_detail"
             app:destination="@id/tripDetailFragment" />
+        <action
+            android:id="@+id/action_history_to_create"
+            app:destination="@id/tripCreateFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/tripCreateFragment"
+        android:name="com.hemingway.kayak.ui.history.TripCreateFragment"
+        android:label="Nueva salida"
+        tools:layout="@layout/fragment_trip_create" />
 
     <fragment
         android:id="@+id/tripDetailFragment"
