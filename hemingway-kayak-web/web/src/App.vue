@@ -3,7 +3,7 @@
     <header class="nav">
       <router-link to="/" class="brand">
         <img src="/logo.svg" alt="Hemingway Kayak" class="brand-mark" />
-        <span class="brand-word">Hemingway<em>Kayak</em></span>
+        <span class="brand-word">Hemingway <em>Kayak</em></span>
       </router-link>
 
       <nav class="nav-links">
@@ -111,7 +111,7 @@ function handleLogout() {
   letter-spacing: -.01em;
 }
 
-.brand-word em { font-style: normal; color: var(--hemmingway-blue); }
+.brand-word em { font-style: normal; color: var(--hemmingway-blue); margin-left: .18em; }
 
 .nav-links { display: flex; gap: 26px; margin-left: auto; }
 
